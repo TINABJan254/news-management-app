@@ -55,8 +55,7 @@ public class ManagementActivity extends AppCompatActivity {
     private void setupEvents() {
         // Sự kiện click Thẻ Quản lý Tin tức
         cardManageNews.setOnClickListener(v -> {
-            Toast.makeText(this, "Mở Quản lý Tin tức", Toast.LENGTH_SHORT).show();
-            // TODO: Chuyển sang màn hình danh sách Tin tức
+            startActivity(new android.content.Intent(this, NewsManagementActivity.class));
         });
 
         // Sự kiện click Thẻ Quản lý Thể loại
