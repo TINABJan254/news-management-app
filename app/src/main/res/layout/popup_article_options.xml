@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_article_options"
+    android:orientation="vertical"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <LinearLayout
+        android:id="@+id/optionDisplay"
+        style="@style/ArticleOptionRow"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Aa"
+            android:textColor="@color/nav_active_green"
+            android:textSize="12sp" />
+
+        <TextView
+            style="@style/ArticleOptionText"
+            android:text="Tùy chọn hiển thị" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider_color" />
+<!--
+    <LinearLayout
+        android:id="@+id/optionSave"
+        style="@style/ArticleOptionRow"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="♧"
+            android:textColor="@color/text_secondary"
+            android:textSize="18sp" />
+
+        <TextView
+            style="@style/ArticleOptionText"
+            android:text="Lưu tin" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/optionReadLater"
+        style="@style/ArticleOptionRow"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="◷"
+            android:textColor="@color/text_secondary"
+            android:textSize="18sp" />
+
+        <TextView
+            style="@style/ArticleOptionText"
+            android:text="Xem sau" />
+    </LinearLayout>
+
+-->
+</LinearLayout>

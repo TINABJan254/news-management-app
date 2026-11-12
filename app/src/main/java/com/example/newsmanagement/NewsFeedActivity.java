@@ -93,8 +93,11 @@ public class NewsFeedActivity extends AppCompatActivity {
                 "", "", sports, "Admin", "4 giờ trước"));
 
         newsAdapter = new NewsFeedAdapter(this, newsList,
-                news -> Toast.makeText(this, "Đang xem: " + news.getTitle(),
-                        Toast.LENGTH_SHORT).show());
+                news -> {
+                    Intent intent = new Intent(this, NewsDetailActivity.class);
+                    intent.putExtra(NewsDetailActivity.EXTRA_NEWS, news);
+                    startActivity(intent);
+                });
         rvNews.setAdapter(newsAdapter);
     }
 

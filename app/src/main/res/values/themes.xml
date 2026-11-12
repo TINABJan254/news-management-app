@@ -23,4 +23,22 @@
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:textSize">11sp</item>
     </style>
+
+    <style name="ArticleOptionRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">42dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="ArticleOptionText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">10dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">12sp</item>
+    </style>
 </resources>
