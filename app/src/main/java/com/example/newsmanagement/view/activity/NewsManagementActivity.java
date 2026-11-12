@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.view.adapter.NewsAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
@@ -49,6 +50,7 @@ public class NewsManagementActivity extends AppCompatActivity {
     private RecyclerView rvNews;
     private NewsAdapter newsAdapter;
     private List<News> newsList;
+    private NewsDatabaseHelper newsDatabaseHelper;
 
     // Filter Chips
     private TextView chipAll, chipSports, chipSocial, chipVehicles, chipLaw, chipWorld;
@@ -73,11 +75,23 @@ public class NewsManagementActivity extends AppCompatActivity {
                     if (newsList.get(i).getId().equals(updatedNews.getId())) {
                         newsList.set(i, updatedNews);
                         newsAdapter.updateData(newsList);
-                        Toast.makeText(this, "Đã cập nhật bài viết: " + updatedNews.getId(),
-                                Toast.LENGTH_SHORT).show();
                         break;
                     }
                 }
+            });
+
+    private final ActivityResultLauncher<Intent> addNewsLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+                    return;
+                }
+                News addedNews = IntentCompat.getSerializableExtra(
+                        result.getData(), AddNewsActivity.EXTRA_NEWS, News.class);
+                if (addedNews == null) {
+                    return;
+                }
+                newsList.add(0, addedNews);
+                newsAdapter.updateData(newsList);
             });
 
     @Override
@@ -135,16 +149,8 @@ public class NewsManagementActivity extends AppCompatActivity {
 
     @SuppressWarnings("unchecked")
     private void setupData(Bundle savedInstanceState) {
+        newsDatabaseHelper = new NewsDatabaseHelper(this);
         newsList = new ArrayList<>();
-        Category catVehicles = new Category("TL04", "Ô tô - Xe máy", "", 0);
-        Category catSports = new Category("TL01", "Thể thao", "", 0);
-        Category catSocial = new Category("TL02", "Xã hội", "", 0);
-        Category catLaw = new Category("TL03", "Pháp luật", "", 0);
-
-        newsList.add(new News("TT-1082", "Mẫu B-SUV Nhật Bản này được giảm hơn 200 triệu đồng cạnh tranh phân khúc", "", "", catVehicles, "Admin", "12/11/2026"));
-        newsList.add(new News("TT-1081", "Đội tuyển quốc gia rốt ráo hoàn thiện chiến thuật trước thềm giải vô địch kh...", "", "", catSports, "Admin", "11/11/2026"));
-        newsList.add(new News("TT-1080", "Tuyến tàu điện ngầm thứ hai chính thức vận hành thử nghiệm toàn tuyến an...", "", "", catSocial, "Admin", "10/11/2026"));
-        newsList.add(new News("TT-1079", "Nghị định mới về bảo vệ dữ liệu người tiêu dùng trong giao dịch số có hiệu lực", "", "", catLaw, "Admin", "09/11/2026"));
 
         if (savedInstanceState != null) {
             ArrayList<News> savedNews = BundleCompat.getSerializable(
@@ -152,6 +158,8 @@ public class NewsManagementActivity extends AppCompatActivity {
             if (savedNews != null) {
                 newsList = savedNews;
             }
+        } else {
+            newsList = newsDatabaseHelper.getAllNews();
         }
 
         newsAdapter = new NewsAdapter(this, newsList, new NewsAdapter.OnNewsActionListener() {
@@ -178,7 +186,7 @@ public class NewsManagementActivity extends AppCompatActivity {
     private void setupEvents() {
         btnBack.setOnClickListener(v -> finish());
         btnAddNewNews.setOnClickListener(v -> {
-            startActivity(new android.content.Intent(this, AddNewsActivity.class));
+            addNewsLauncher.launch(new Intent(this, AddNewsActivity.class));
         });
 
         // Tìm kiếm theo từ khóa
@@ -252,6 +260,10 @@ public class NewsManagementActivity extends AppCompatActivity {
         btnCancelDelete.setOnClickListener(v -> dialog.dismiss());
 
         btnConfirmDelete.setOnClickListener(v -> {
+            if (newsDatabaseHelper.deleteNews(news) != 1) {
+                Toast.makeText(this, "Không thể xóa bài viết.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             newsList.remove(news);
             newsAdapter.updateData(newsList);
             Toast.makeText(this, "Đã xóa bài viết: " + news.getId(), Toast.LENGTH_SHORT).show();

@@ -1,6 +1,7 @@
 package com.example.newsmanagement.view.activity;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -16,6 +17,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 import com.example.newsmanagement.R;
@@ -29,8 +32,9 @@ import java.util.Locale;
 
 public class AddNewsActivity extends AppCompatActivity {
 
+    public static final String EXTRA_NEWS = "extra_new_news";
+
     private ImageView btnBack;
-    private EditText etNewsCode;
     private View layoutSelectDate;
     private TextView tvNewsPublishDate;
     private Spinner spCategory;
@@ -43,6 +47,8 @@ public class AddNewsActivity extends AppCompatActivity {
 
     private List<Category> categoryList;
     private Calendar selectedCalendar;
+    private CategoryDatabaseHelper categoryDatabaseHelper;
+    private NewsDatabaseHelper newsDatabaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +69,6 @@ public class AddNewsActivity extends AppCompatActivity {
 
     private void initViews() {
         btnBack = findViewById(R.id.btnBack);
-        etNewsCode = findViewById(R.id.etNewsCode);
         layoutSelectDate = findViewById(R.id.layoutSelectDate);
         tvNewsPublishDate = findViewById(R.id.tvNewsPublishDate);
         spCategory = findViewById(R.id.spCategory);
@@ -77,19 +82,13 @@ public class AddNewsActivity extends AppCompatActivity {
 
     private void setupData() {
         selectedCalendar = Calendar.getInstance();
+        categoryDatabaseHelper = new CategoryDatabaseHelper(this);
+        newsDatabaseHelper = new NewsDatabaseHelper(this);
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         tvNewsPublishDate.setText(dateFormat.format(new Date()));
 
-        // Gợi ý mã tin tức mặc định
-        etNewsCode.setText("TT-1083");
-
         // Nạp danh sách thể loại vào Spinner
-        categoryList = new ArrayList<>();
-        categoryList.add(new Category("TL01", "Thể thao", "", 0));
-        categoryList.add(new Category("TL02", "Xã hội", "", 0));
-        categoryList.add(new Category("TL03", "Pháp luật", "", 0));
-        categoryList.add(new Category("TL04", "Ô tô - Xe máy", "", 0));
-        categoryList.add(new Category("TL05", "Thế giới", "", 0));
+        categoryList = categoryDatabaseHelper.getAllCategories();
 
         List<String> categoryNames = new ArrayList<>();
         for (Category cat : categoryList) {
@@ -125,17 +124,11 @@ public class AddNewsActivity extends AppCompatActivity {
     }
 
     private void handleSaveNews() {
-        String code = etNewsCode.getText().toString().trim();
+        String code = newsDatabaseHelper.getNextNewsId();
         String title = etNewsTitle.getText().toString().trim();
         String detail = etNewsDetail.getText().toString().trim();
         String imageUrl = etNewsImageUrl.getText().toString().trim();
         String publishDate = tvNewsPublishDate.getText().toString().trim();
-
-        if (code.isEmpty()) {
-            etNewsCode.setError("Vui lòng nhập mã tin tức!");
-            etNewsCode.requestFocus();
-            return;
-        }
 
         if (title.isEmpty()) {
             etNewsTitle.setError("Vui lòng nhập tiêu đề bài viết!");
@@ -149,15 +142,26 @@ public class AddNewsActivity extends AppCompatActivity {
             return;
         }
 
+        if (categoryList.isEmpty()) {
+            Toast.makeText(this, "Vui lòng thêm thể loại trước khi tạo tin tức.",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Lấy thể loại được chọn từ Spinner
         int selectedIndex = spCategory.getSelectedItemPosition();
-        Category selectedCategory = (selectedIndex >= 0 && selectedIndex < categoryList.size())
-                ? categoryList.get(selectedIndex)
-                : new Category("", "Chung", "", 0);
+        if (selectedIndex < 0 || selectedIndex >= categoryList.size()) {
+            Toast.makeText(this, "Vui lòng chọn thể loại.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Category selectedCategory = categoryList.get(selectedIndex);
 
         News news = new News(code, title, detail, imageUrl, selectedCategory, "Admin", publishDate);
 
-        Toast.makeText(this, "Đã lưu bài viết: " + news.getId(), Toast.LENGTH_SHORT).show();
+        newsDatabaseHelper.insertNews(news);
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra(EXTRA_NEWS, news);
+        setResult(RESULT_OK, resultIntent);
         finish();
     }
 }

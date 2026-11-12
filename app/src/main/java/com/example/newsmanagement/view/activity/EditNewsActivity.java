@@ -18,6 +18,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 import com.example.newsmanagement.R;
@@ -49,6 +51,8 @@ public class EditNewsActivity extends AppCompatActivity {
     private News news;
     private List<Category> categoryList;
     private Calendar selectedCalendar;
+    private CategoryDatabaseHelper categoryDatabaseHelper;
+    private NewsDatabaseHelper newsDatabaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +76,8 @@ public class EditNewsActivity extends AppCompatActivity {
             return;
         }
 
+        categoryDatabaseHelper = new CategoryDatabaseHelper(this);
+        newsDatabaseHelper = new NewsDatabaseHelper(this);
         setupData(savedInstanceState);
         setupEvents();
     }
@@ -94,12 +100,7 @@ public class EditNewsActivity extends AppCompatActivity {
         selectedCalendar = Calendar.getInstance();
 
         // Nạp danh sách thể loại vào Spinner
-        categoryList = new ArrayList<>();
-        categoryList.add(new Category("TL01", "Thể thao", "", 0));
-        categoryList.add(new Category("TL02", "Xã hội", "", 0));
-        categoryList.add(new Category("TL03", "Pháp luật", "", 0));
-        categoryList.add(new Category("TL04", "Ô tô - Xe máy", "", 0));
-        categoryList.add(new Category("TL05", "Thế giới", "", 0));
+        categoryList = categoryDatabaseHelper.getAllCategories();
 
         // Giữ lại thể loại hiện tại nếu bài viết thuộc danh mục ngoài dữ liệu mẫu.
         int selectedCategoryIndex = 0;
@@ -209,15 +210,22 @@ public class EditNewsActivity extends AppCompatActivity {
         }
 
         int selectedIndex = spCategory.getSelectedItemPosition();
-        Category selectedCategory = (selectedIndex >= 0 && selectedIndex < categoryList.size())
-                ? categoryList.get(selectedIndex)
-                : new Category("", "Chung", "", 0);
+        if (selectedIndex < 0 || selectedIndex >= categoryList.size()) {
+            Toast.makeText(this, "Vui lòng chọn thể loại.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Category selectedCategory = categoryList.get(selectedIndex);
 
         news.setTitle(title);
         news.setDetail(detail);
         news.setImageUrl(imageUrl);
         news.setCategory(selectedCategory);
         news.setPublishDate(publishDate);
+
+        if (newsDatabaseHelper.updateNews(news) != 1) {
+            Toast.makeText(this, "Không thể cập nhật bài viết.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         Intent resultIntent = new Intent();
         resultIntent.putExtra(EXTRA_NEWS, news);
