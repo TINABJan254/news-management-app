@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
 import com.example.newsmanagement.view.adapter.CategoryAdapter;
 import com.example.newsmanagement.model.Category;
 
@@ -38,6 +39,7 @@ public class CategoryManagementActivity extends AppCompatActivity {
     private RecyclerView rvCategories;
     private CategoryAdapter categoryAdapter;
     private List<Category> categoryList;
+    private CategoryDatabaseHelper databaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,12 +67,8 @@ public class CategoryManagementActivity extends AppCompatActivity {
     }
 
     private void setupData() {
-        categoryList = new ArrayList<>();
-        categoryList.add(new Category("TL01", "Bóng đá", "Tin tức giải đấu, bóng đá trong nước và quốc tế", 320));
-        categoryList.add(new Category("TL02", "Xã hội", "Sự kiện đời sống, thời tiết, giao thông đô thị", 450));
-        categoryList.add(new Category("TL03", "Pháp luật", "An ninh trật tự, xét xử, tư vấn pháp lý", 210));
-        categoryList.add(new Category("TL04", "Ô tô - Xe máy", "Thị trường xe hơi, xe máy điện, đánh giá chuyên sâu", 160));
-        categoryList.add(new Category("TL05", "Thế giới", "Tin tức thời sự quốc tế nóng hổi", 100));
+        databaseHelper = new CategoryDatabaseHelper(this);
+        categoryList = databaseHelper.getAllCategories();
 
         categoryAdapter = new CategoryAdapter(this, categoryList, new CategoryAdapter.OnCategoryActionListener() {
             @Override
@@ -112,40 +110,27 @@ public class CategoryManagementActivity extends AppCompatActivity {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(LayoutInflater.from(this).inflate(R.layout.dialog_add_category, null));
 
-        EditText etCode = dialog.findViewById(R.id.etDialogCategoryCode);
         EditText etName = dialog.findViewById(R.id.etDialogCategoryName);
         EditText etDesc = dialog.findViewById(R.id.etDialogCategoryDesc);
         View btnCancel = dialog.findViewById(R.id.btnDialogCancel);
         View btnSave = dialog.findViewById(R.id.btnDialogSave);
 
-        etCode.setText(String.format("TL%02d", categoryList.size() + 1));
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnSave.setOnClickListener(v -> {
-            String code = etCode.getText().toString().trim();
+            String code = databaseHelper.getNextCategoryId();
             String name = etName.getText().toString().trim();
             String desc = etDesc.getText().toString().trim();
 
-            if (code.isEmpty()) {
-                etCode.setError("Vui lòng nhập mã loại!");
-                etCode.requestFocus();
-                return;
-            }
             if (name.isEmpty()) {
                 etName.setError("Vui lòng nhập tên thể loại!");
                 etName.requestFocus();
                 return;
             }
 
-            for (Category cat : categoryList) {
-                if (cat.getId().equalsIgnoreCase(code)) {
-                    etCode.setError("Mã loại này đã tồn tại!");
-                    etCode.requestFocus();
-                    return;
-                }
-            }
-
-            categoryList.add(0, new Category(code, name, desc, 0));
+            Category category = new Category(code, name, desc, 0);
+            databaseHelper.insertCategory(category);
+            categoryList.add(0, category);
             categoryAdapter.updateData(categoryList);
             rvCategories.scrollToPosition(0);
             Toast.makeText(this, "Đã thêm thể loại mới!", Toast.LENGTH_SHORT).show();
@@ -183,6 +168,15 @@ public class CategoryManagementActivity extends AppCompatActivity {
                 return;
             }
 
+            Category updatedCategory = new Category(
+                    category.getId(),
+                    newName,
+                    newDesc,
+                    category.getArticleCount());
+            if (databaseHelper.updateCategory(updatedCategory) != 1) {
+                Toast.makeText(this, "Không thể cập nhật thể loại.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             category.setName(newName);
             category.setDescription(newDesc);
             categoryAdapter.updateData(categoryList);
@@ -207,6 +201,10 @@ public class CategoryManagementActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnConfirm.setOnClickListener(v -> {
+            if (databaseHelper.deleteCategory(category) != 1) {
+                Toast.makeText(this, "Không thể xóa thể loại.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             categoryList.remove(category);
             categoryAdapter.updateData(categoryList);
             Toast.makeText(this, "Đã xóa thể loại: " + category.getName(), Toast.LENGTH_SHORT).show();
