@@ -70,7 +70,8 @@ public class ManagementActivity extends AppCompatActivity {
                 Toast.makeText(this, "Chuyển sang Trang chủ", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (itemId == R.id.nav_news) {
-                Toast.makeText(this, "Chuyển sang Tin tức", Toast.LENGTH_SHORT).show();
+                startActivity(new android.content.Intent(this, NewsFeedActivity.class));
+                finish();
                 return true;
             } else if (itemId == R.id.nav_management) {
                 return true;
