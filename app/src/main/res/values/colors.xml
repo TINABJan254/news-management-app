@@ -2,4 +2,33 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="background_page">#FFFFFFFF</color>
+
+    <!-- Primary Accent Green -->
+    <color name="nav_active_green">#059669</color>
+    <color name="nav_inactive_gray">#6B7280</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#111827</color>
+    <color name="text_secondary">#4B5563</color>
+    <color name="text_muted">#6B7280</color>
+    <color name="text_caption">#94A3B8</color>
+
+    <!-- Borders & Dividers -->
+    <color name="card_border">#E5E7EB</color>
+    <color name="divider_color">#F3F4F6</color>
+    <color name="card_bg">#FFFFFFFF</color>
+    <color name="card_ripple">#10000000</color>
+
+    <!-- Category Management specific colors -->
+    <color name="search_bg">#F1F5F9</color>
+    <color name="btn_add_bg">#E2E8F0</color>
+    <color name="btn_add_text">#334155</color>
+    <color name="tag_code_bg">#F1F5F9</color>
+    <color name="tag_code_text">#475569</color>
+    <color name="badge_articles_text">#15803D</color>
+    <color name="btn_edit_bg">#F1F5F9</color>
+    <color name="btn_edit_text">#334155</color>
+    <color name="btn_delete_bg">#FEE2E2</color>
+    <color name="btn_delete_text">#DC2626</color>
 </resources>
