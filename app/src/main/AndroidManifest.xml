@@ -29,6 +29,13 @@
         <activity
             android:name=".NewsManagementActivity"
             android:exported="false" />
+        <activity
+            android:name=".AddNewsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".EditNewsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

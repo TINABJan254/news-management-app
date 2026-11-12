@@ -15,6 +15,7 @@ import com.example.newsmanagement.model.News;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder> {
 
@@ -28,10 +29,12 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     private List<News> newsList;
     private List<News> newsListFull;
     private final OnNewsActionListener listener;
+    private String searchQuery = "";
+    private String selectedCategory = "";
 
     public NewsAdapter(Context context, List<News> newsList, OnNewsActionListener listener) {
         this.context = context;
-        this.newsList = newsList;
+        this.newsList = new ArrayList<>(newsList);
         this.newsListFull = new ArrayList<>(newsList);
         this.listener = listener;
     }
@@ -80,42 +83,36 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     }
 
     public void updateData(List<News> newList) {
-        this.newsList = newList;
         this.newsListFull = new ArrayList<>(newList);
-        notifyDataSetChanged();
+        applyFilters();
     }
 
     // Tìm kiếm theo từ khóa (tiêu đề hoặc mã tin)
     public void filter(String query) {
-        if (query == null || query.trim().isEmpty()) {
-            newsList = new ArrayList<>(newsListFull);
-        } else {
-            String pattern = query.toLowerCase().trim();
-            List<News> filtered = new ArrayList<>();
-            for (News item : newsListFull) {
-                if (item.getTitle().toLowerCase().contains(pattern) ||
-                    item.getId().toLowerCase().contains(pattern)) {
-                    filtered.add(item);
-                }
-            }
-            newsList = filtered;
-        }
-        notifyDataSetChanged();
+        searchQuery = query == null ? "" : query.toLowerCase(Locale.ROOT).trim();
+        applyFilters();
     }
 
     // Lọc theo thể loại
     public void filterByCategory(String categoryName) {
-        if (categoryName == null || categoryName.equalsIgnoreCase("Tất cả")) {
-            newsList = new ArrayList<>(newsListFull);
-        } else {
-            List<News> filtered = new ArrayList<>();
-            for (News item : newsListFull) {
-                if (item.getCategoryName().equalsIgnoreCase(categoryName)) {
-                    filtered.add(item);
-                }
+        selectedCategory = categoryName == null || categoryName.equalsIgnoreCase("Tất cả")
+                ? "" : categoryName;
+        applyFilters();
+    }
+
+    private void applyFilters() {
+        List<News> filtered = new ArrayList<>();
+        for (News item : newsListFull) {
+            boolean matchesQuery = searchQuery.isEmpty()
+                    || item.getTitle().toLowerCase(Locale.ROOT).contains(searchQuery)
+                    || item.getId().toLowerCase(Locale.ROOT).contains(searchQuery);
+            boolean matchesCategory = selectedCategory.isEmpty()
+                    || item.getCategoryName().equalsIgnoreCase(selectedCategory);
+            if (matchesQuery && matchesCategory) {
+                filtered.add(item);
             }
-            newsList = filtered;
         }
+        newsList = filtered;
         notifyDataSetChanged();
     }
 

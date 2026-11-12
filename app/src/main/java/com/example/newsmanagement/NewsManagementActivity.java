@@ -2,12 +2,12 @@ package com.example.newsmanagement;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -17,8 +17,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.IntentCompat;
+import androidx.core.os.BundleCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -34,6 +38,9 @@ import java.util.Calendar;
 import java.util.List;
 
 public class NewsManagementActivity extends AppCompatActivity {
+
+    private static final String STATE_NEWS_LIST = "news_list";
+    private static final String STATE_CATEGORY_CHIP = "category_chip";
 
     private ImageView btnBack;
     private View btnAddNewNews;
@@ -51,6 +58,27 @@ public class NewsManagementActivity extends AppCompatActivity {
     private TextView tvStartDate, tvEndDate;
     private View btnApplyDateFilter;
 
+    private final ActivityResultLauncher<Intent> editNewsLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+                    return;
+                }
+                News updatedNews = IntentCompat.getSerializableExtra(
+                        result.getData(), EditNewsActivity.EXTRA_NEWS, News.class);
+                if (updatedNews == null) {
+                    return;
+                }
+                for (int i = 0; i < newsList.size(); i++) {
+                    if (newsList.get(i).getId().equals(updatedNews.getId())) {
+                        newsList.set(i, updatedNews);
+                        newsAdapter.updateData(newsList);
+                        Toast.makeText(this, "Đã cập nhật bài viết: " + updatedNews.getId(),
+                                Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+            });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,8 +92,15 @@ public class NewsManagementActivity extends AppCompatActivity {
         });
 
         initViews();
-        setupData();
+        setupData(savedInstanceState);
         setupEvents();
+        if (savedInstanceState != null) {
+            View selectedChip = findViewById(savedInstanceState.getInt(
+                    STATE_CATEGORY_CHIP, R.id.chipAll));
+            if (selectedChip != null) {
+                selectedChip.performClick();
+            }
+        }
     }
 
     private void initViews() {
@@ -90,7 +125,15 @@ public class NewsManagementActivity extends AppCompatActivity {
         rvNews.setLayoutManager(new LinearLayoutManager(this));
     }
 
-    private void setupData() {
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable(STATE_NEWS_LIST, new ArrayList<>(newsList));
+        outState.putInt(STATE_CATEGORY_CHIP, currentSelectedChip.getId());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setupData(Bundle savedInstanceState) {
         newsList = new ArrayList<>();
         Category catVehicles = new Category("TL04", "Ô tô - Xe máy", "", 0);
         Category catSports = new Category("TL01", "Thể thao", "", 0);
@@ -102,10 +145,20 @@ public class NewsManagementActivity extends AppCompatActivity {
         newsList.add(new News("TT-1080", "Tuyến tàu điện ngầm thứ hai chính thức vận hành thử nghiệm toàn tuyến an...", "", "", catSocial, "Admin", "10/11/2026"));
         newsList.add(new News("TT-1079", "Nghị định mới về bảo vệ dữ liệu người tiêu dùng trong giao dịch số có hiệu lực", "", "", catLaw, "Admin", "09/11/2026"));
 
+        if (savedInstanceState != null) {
+            ArrayList<News> savedNews = BundleCompat.getSerializable(
+                    savedInstanceState, STATE_NEWS_LIST, ArrayList.class);
+            if (savedNews != null) {
+                newsList = savedNews;
+            }
+        }
+
         newsAdapter = new NewsAdapter(this, newsList, new NewsAdapter.OnNewsActionListener() {
             @Override
             public void onEdit(News news) {
-                Toast.makeText(NewsManagementActivity.this, "Sửa bài viết: " + news.getId(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(NewsManagementActivity.this, EditNewsActivity.class);
+                intent.putExtra(EditNewsActivity.EXTRA_NEWS, news);
+                editNewsLauncher.launch(intent);
             }
 
             @Override
@@ -123,7 +176,9 @@ public class NewsManagementActivity extends AppCompatActivity {
 
     private void setupEvents() {
         btnBack.setOnClickListener(v -> finish());
-        btnAddNewNews.setOnClickListener(v -> Toast.makeText(this, "Mở form thêm mới tin tức", Toast.LENGTH_SHORT).show());
+        btnAddNewNews.setOnClickListener(v -> {
+            startActivity(new android.content.Intent(this, AddNewsActivity.class));
+        });
 
         // Tìm kiếm theo từ khóa
         etSearchNews.addTextChangedListener(new TextWatcher() {
@@ -186,7 +241,7 @@ public class NewsManagementActivity extends AppCompatActivity {
     private void showDeleteConfirmDialog(News news) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(LayoutInflater.from(this).inflate(R.layout.dialog_delete_confirm, null));
+        dialog.setContentView(R.layout.dialog_delete_confirm);
 
         TextView tvDeleteMessage = dialog.findViewById(R.id.tvDeleteMessage);
         View btnCancelDelete = dialog.findViewById(R.id.btnCancelDelete);
@@ -202,8 +257,8 @@ public class NewsManagementActivity extends AppCompatActivity {
             dialog.dismiss();
         });
 
-        formatDialogWindow(dialog);
         dialog.show();
+        formatDialogWindow(dialog);
     }
 
     private void formatDialogWindow(Dialog dialog) {

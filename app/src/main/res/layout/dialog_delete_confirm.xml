@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:lineSpacingExtra="3dp"
-        android:text="Bạn có chắc chắn muốn xóa thể loại này không? Hành động này không thể hoàn tác."
+        android:text="Bạn có chắc chắn muốn xóa mục này không? Hành động này không thể hoàn tác."
         android:textColor="@color/text_secondary"
         android:textSize="14sp" />
 
