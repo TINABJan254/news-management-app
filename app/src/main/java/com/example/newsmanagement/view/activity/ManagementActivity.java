@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.os.Bundle;
 import android.widget.TextView;
@@ -12,6 +12,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
+import com.example.newsmanagement.R;
 
 public class ManagementActivity extends AppCompatActivity {
 

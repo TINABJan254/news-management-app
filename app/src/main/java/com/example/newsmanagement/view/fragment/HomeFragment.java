@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.fragment;
 
 import android.app.Fragment;
 import android.content.Intent;
@@ -12,7 +12,9 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.newsmanagement.adapter.NewsFeedAdapter;
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.view.activity.NewsDetailActivity;
+import com.example.newsmanagement.view.adapter.NewsFeedAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 

@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
@@ -29,7 +29,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.newsmanagement.adapter.NewsAdapter;
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.view.adapter.NewsAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 

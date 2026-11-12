@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NewsManagement">
         <activity
-            android:name=".MainActivity"
+            android:name=".view.activity.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,28 +21,28 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".HomeActivity"
+            android:name=".view.activity.HomeActivity"
             android:exported="false" />
         <activity
-            android:name=".ManagementActivity"
+            android:name=".view.activity.ManagementActivity"
             android:exported="false" />
         <activity
-            android:name=".CategoryManagementActivity"
+            android:name=".view.activity.CategoryManagementActivity"
             android:exported="false" />
         <activity
-            android:name=".NewsManagementActivity"
+            android:name=".view.activity.NewsManagementActivity"
             android:exported="false" />
         <activity
-            android:name=".NewsFeedActivity"
+            android:name=".view.activity.NewsFeedActivity"
             android:exported="false" />
         <activity
-            android:name=".NewsDetailActivity"
+            android:name=".view.activity.NewsDetailActivity"
             android:exported="false" />
         <activity
-            android:name=".AddNewsActivity"
+            android:name=".view.activity.AddNewsActivity"
             android:exported="false" />
         <activity
-            android:name=".EditNewsActivity"
+            android:name=".view.activity.EditNewsActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>

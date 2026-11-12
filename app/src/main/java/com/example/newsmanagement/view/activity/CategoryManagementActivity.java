@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.app.Dialog;
 import android.graphics.Color;
@@ -23,7 +23,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.newsmanagement.adapter.CategoryAdapter;
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.view.adapter.CategoryAdapter;
 import com.example.newsmanagement.model.Category;
 
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class CategoryManagementActivity extends AppCompatActivity {
         });
 
         initViews();
-        setupSampleData();
+        setupData();
         setupEvents();
     }
 
@@ -60,11 +61,10 @@ public class CategoryManagementActivity extends AppCompatActivity {
         btnAddNewCategory = findViewById(R.id.btnAddNewCategory);
         etSearchCategory = findViewById(R.id.etSearchCategory);
         rvCategories = findViewById(R.id.rvCategories);
-
         rvCategories.setLayoutManager(new LinearLayoutManager(this));
     }
 
-    private void setupSampleData() {
+    private void setupData() {
         categoryList = new ArrayList<>();
         categoryList.add(new Category("TL01", "Bóng đá", "Tin tức giải đấu, bóng đá trong nước và quốc tế", 320));
         categoryList.add(new Category("TL02", "Xã hội", "Sự kiện đời sống, thời tiết, giao thông đô thị", 450));
@@ -83,18 +83,14 @@ public class CategoryManagementActivity extends AppCompatActivity {
                 showDeleteConfirmDialog(category);
             }
         });
-
         rvCategories.setAdapter(categoryAdapter);
     }
 
     private void setupEvents() {
-        // Nút Back quay lại màn hình trước
         btnBack.setOnClickListener(v -> finish());
-
-        // Nút Thêm mới: Mở popup thêm thể loại
         btnAddNewCategory.setOnClickListener(v -> showAddCategoryDialog());
 
-        // Tìm kiếm theo thời gian thực (TextWatcher)
+        // Lắng nghe tìm kiếm trực tiếp
         etSearchCategory.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -111,146 +107,117 @@ public class CategoryManagementActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * Popup Thêm mới Thể loại (dùng dialog_add_category.xml)
-     */
     private void showAddCategoryDialog() {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(LayoutInflater.from(this).inflate(R.layout.dialog_add_category, null));
 
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_category, null);
-        dialog.setContentView(dialogView);
+        EditText etCode = dialog.findViewById(R.id.etDialogCategoryCode);
+        EditText etName = dialog.findViewById(R.id.etDialogCategoryName);
+        EditText etDesc = dialog.findViewById(R.id.etDialogCategoryDesc);
+        View btnCancel = dialog.findViewById(R.id.btnDialogCancel);
+        View btnSave = dialog.findViewById(R.id.btnDialogSave);
 
-        EditText etCategoryCode = dialogView.findViewById(R.id.etDialogCategoryCode);
-        EditText etCategoryName = dialogView.findViewById(R.id.etDialogCategoryName);
-        EditText etCategoryDesc = dialogView.findViewById(R.id.etDialogCategoryDesc);
-        View btnDialogCancel = dialogView.findViewById(R.id.btnDialogCancel);
-        View btnDialogSave = dialogView.findViewById(R.id.btnDialogSave);
+        etCode.setText(String.format("TL%02d", categoryList.size() + 1));
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        // Gợi ý mã thể loại tự động ví dụ TL06
-        etCategoryCode.setText(String.format("TL%02d", categoryList.size() + 1));
-
-        btnDialogCancel.setOnClickListener(v -> dialog.dismiss());
-
-        btnDialogSave.setOnClickListener(v -> {
-            String code = etCategoryCode.getText().toString().trim();
-            String name = etCategoryName.getText().toString().trim();
-            String desc = etCategoryDesc.getText().toString().trim();
+        btnSave.setOnClickListener(v -> {
+            String code = etCode.getText().toString().trim();
+            String name = etName.getText().toString().trim();
+            String desc = etDesc.getText().toString().trim();
 
             if (code.isEmpty()) {
-                etCategoryCode.setError("Vui lòng nhập mã loại!");
-                etCategoryCode.requestFocus();
+                etCode.setError("Vui lòng nhập mã loại!");
+                etCode.requestFocus();
                 return;
             }
-
             if (name.isEmpty()) {
-                etCategoryName.setError("Vui lòng nhập tên thể loại!");
-                etCategoryName.requestFocus();
+                etName.setError("Vui lòng nhập tên thể loại!");
+                etName.requestFocus();
                 return;
             }
 
             for (Category cat : categoryList) {
                 if (cat.getId().equalsIgnoreCase(code)) {
-                    etCategoryCode.setError("Mã loại này đã tồn tại!");
-                    etCategoryCode.requestFocus();
+                    etCode.setError("Mã loại này đã tồn tại!");
+                    etCode.requestFocus();
                     return;
                 }
             }
 
-            Category newCategory = new Category(code, name, desc, 0);
-            categoryList.add(0, newCategory);
+            categoryList.add(0, new Category(code, name, desc, 0));
             categoryAdapter.updateData(categoryList);
             rvCategories.scrollToPosition(0);
             Toast.makeText(this, "Đã thêm thể loại mới!", Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
-        setupDialogWindow(dialog);
+        formatDialogWindow(dialog);
         dialog.show();
     }
 
-    /**
-     * Popup Chỉnh sửa Thể loại (dùng dialog_edit_category.xml)
-     * Các trường được điền sẵn thông tin cũ, Mã loại bị khóa cố định không cho sửa
-     */
     private void showEditCategoryDialog(Category category) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(LayoutInflater.from(this).inflate(R.layout.dialog_edit_category, null));
 
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_category, null);
-        dialog.setContentView(dialogView);
+        EditText etCode = dialog.findViewById(R.id.etEditCategoryCode);
+        EditText etName = dialog.findViewById(R.id.etEditCategoryName);
+        EditText etDesc = dialog.findViewById(R.id.etEditCategoryDesc);
+        View btnCancel = dialog.findViewById(R.id.btnEditDialogCancel);
+        View btnSave = dialog.findViewById(R.id.btnEditDialogSave);
 
-        EditText etEditCategoryCode = dialogView.findViewById(R.id.etEditCategoryCode);
-        EditText etEditCategoryName = dialogView.findViewById(R.id.etEditCategoryName);
-        EditText etEditCategoryDesc = dialogView.findViewById(R.id.etEditCategoryDesc);
-        View btnEditDialogCancel = dialogView.findViewById(R.id.btnEditDialogCancel);
-        View btnEditDialogSave = dialogView.findViewById(R.id.btnEditDialogSave);
+        etCode.setText(category.getId());
+        etName.setText(category.getName());
+        etDesc.setText(category.getDescription());
 
-        // Điền sẵn dữ liệu cũ
-        etEditCategoryCode.setText(category.getId());
-        etEditCategoryName.setText(category.getName());
-        etEditCategoryDesc.setText(category.getDescription());
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        // Đóng popup
-        btnEditDialogCancel.setOnClickListener(v -> dialog.dismiss());
-
-        // Lưu cập nhật
-        btnEditDialogSave.setOnClickListener(v -> {
-            String newName = etEditCategoryName.getText().toString().trim();
-            String newDesc = etEditCategoryDesc.getText().toString().trim();
+        btnSave.setOnClickListener(v -> {
+            String newName = etName.getText().toString().trim();
+            String newDesc = etDesc.getText().toString().trim();
 
             if (newName.isEmpty()) {
-                etEditCategoryName.setError("Vui lòng nhập tên thể loại!");
-                etEditCategoryName.requestFocus();
+                etName.setError("Vui lòng nhập tên thể loại!");
+                etName.requestFocus();
                 return;
             }
 
-            // Cập nhật thông tin
             category.setName(newName);
             category.setDescription(newDesc);
             categoryAdapter.updateData(categoryList);
-
             Toast.makeText(this, "Đã cập nhật thể loại: " + category.getId(), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
-        setupDialogWindow(dialog);
+        formatDialogWindow(dialog);
         dialog.show();
     }
 
-    /**
-     * Popup Xác nhận Xóa thể loại (dùng dialog_delete_confirm.xml)
-     */
     private void showDeleteConfirmDialog(Category category) {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(LayoutInflater.from(this).inflate(R.layout.dialog_delete_confirm, null));
 
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_delete_confirm, null);
-        dialog.setContentView(dialogView);
-
-        TextView tvDeleteMessage = dialogView.findViewById(R.id.tvDeleteMessage);
-        View btnCancelDelete = dialogView.findViewById(R.id.btnCancelDelete);
-        View btnConfirmDelete = dialogView.findViewById(R.id.btnConfirmDelete);
+        TextView tvDeleteMessage = dialog.findViewById(R.id.tvDeleteMessage);
+        View btnCancel = dialog.findViewById(R.id.btnCancelDelete);
+        View btnConfirm = dialog.findViewById(R.id.btnConfirmDelete);
 
         tvDeleteMessage.setText("Bạn có chắc chắn muốn xóa thể loại \"" + category.getName() + "\" (" + category.getId() + ") không?");
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        btnCancelDelete.setOnClickListener(v -> dialog.dismiss());
-
-        btnConfirmDelete.setOnClickListener(v -> {
+        btnConfirm.setOnClickListener(v -> {
             categoryList.remove(category);
             categoryAdapter.updateData(categoryList);
             Toast.makeText(this, "Đã xóa thể loại: " + category.getName(), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
-        setupDialogWindow(dialog);
+        formatDialogWindow(dialog);
         dialog.show();
     }
 
-    /**
-     * Cấu hình hiển thị Dialog bo tròn 16dp và vừa vặn màn hình
-     */
-    private void setupDialogWindow(Dialog dialog) {
+    private void formatDialogWindow(Dialog dialog) {
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.92);

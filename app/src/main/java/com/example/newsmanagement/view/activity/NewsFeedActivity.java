@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.os.Bundle;
 import android.text.Editable;
@@ -20,7 +20,8 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.newsmanagement.adapter.NewsFeedAdapter;
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.view.adapter.NewsFeedAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 import com.google.android.material.bottomnavigation.BottomNavigationView;

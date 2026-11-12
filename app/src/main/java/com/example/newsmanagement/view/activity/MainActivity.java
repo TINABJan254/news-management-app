@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
@@ -11,6 +11,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.view.fragment.HomeFragment;
+import com.example.newsmanagement.view.fragment.ManagementFragment;
+import com.example.newsmanagement.view.fragment.NewsFragment;
 
 public class MainActivity extends AppCompatActivity {
 

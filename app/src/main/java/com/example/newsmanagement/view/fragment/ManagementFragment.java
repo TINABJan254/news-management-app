@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.fragment;
 
 import android.app.Fragment;
 import android.content.Intent;
@@ -9,6 +9,9 @@ import android.view.ViewGroup;
 
 import androidx.annotation.Nullable;
 
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.view.activity.CategoryManagementActivity;
+import com.example.newsmanagement.view.activity.NewsManagementActivity;
 import com.google.android.material.card.MaterialCardView;
 
 public class ManagementFragment extends Fragment {

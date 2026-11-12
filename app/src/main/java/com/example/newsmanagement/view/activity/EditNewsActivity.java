@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
@@ -20,6 +20,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
+import com.example.newsmanagement.R;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

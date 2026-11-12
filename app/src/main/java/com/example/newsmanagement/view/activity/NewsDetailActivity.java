@@ -1,4 +1,4 @@
-package com.example.newsmanagement;
+package com.example.newsmanagement.view.activity;
 
 import android.os.Bundle;
 import android.graphics.Color;
@@ -18,6 +18,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.newsmanagement.model.News;
+import com.example.newsmanagement.R;
 
 public class NewsDetailActivity extends AppCompatActivity {
 
