@@ -67,17 +67,22 @@ public class ManagementActivity extends AppCompatActivity {
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                startActivity(new android.content.Intent(this, HomeActivity.class));
-                finish();
+                navigateTo(HomeActivity.class);
                 return true;
             } else if (itemId == R.id.nav_news) {
-                startActivity(new android.content.Intent(this, NewsFeedActivity.class));
-                finish();
+                navigateTo(NewsFeedActivity.class);
                 return true;
             } else if (itemId == R.id.nav_management) {
                 return true;
             }
             return false;
         });
+    }
+
+    private void navigateTo(Class<?> activityClass) {
+        android.content.Intent intent = new android.content.Intent(this, activityClass);
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
     }
 }

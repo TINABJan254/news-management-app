@@ -84,14 +84,19 @@ public class HomeActivity extends AppCompatActivity {
                 return true;
             }
             if (item.getItemId() == R.id.nav_news) {
-                startActivity(new Intent(this, NewsFeedActivity.class));
-                finish();
+                navigateTo(NewsFeedActivity.class);
                 return true;
             }
-            startActivity(new Intent(this, ManagementActivity.class));
-            finish();
+            navigateTo(ManagementActivity.class);
             return true;
         });
+    }
+
+    private void navigateTo(Class<?> activityClass) {
+        Intent intent = new Intent(this, activityClass);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
     }
 
     private void openNews(News news) {
