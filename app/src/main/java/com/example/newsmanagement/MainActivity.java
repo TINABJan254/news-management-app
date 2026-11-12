@@ -10,8 +10,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Tạm thời điều hướng trực tiếp sang màn hình Quản lý
-        startActivity(new Intent(this, ManagementActivity.class));
+        startActivity(new Intent(this, HomeActivity.class));
         finish();
     }
 }

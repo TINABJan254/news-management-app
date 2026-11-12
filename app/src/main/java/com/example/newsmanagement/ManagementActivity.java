@@ -67,7 +67,8 @@ public class ManagementActivity extends AppCompatActivity {
         bottomNavigation.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                Toast.makeText(this, "Chuyển sang Trang chủ", Toast.LENGTH_SHORT).show();
+                startActivity(new android.content.Intent(this, HomeActivity.class));
+                finish();
                 return true;
             } else if (itemId == R.id.nav_news) {
                 startActivity(new android.content.Intent(this, NewsFeedActivity.class));

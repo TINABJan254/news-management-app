@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -75,15 +74,6 @@ public class NewsDetailActivity extends AppCompatActivity {
             popupWindow.dismiss();
             showFontSizeDialog(tvContent);
         });
-        popupView.findViewById(R.id.optionSave).setOnClickListener(v -> {
-            popupWindow.dismiss();
-            Toast.makeText(this, "Đã lưu tin", Toast.LENGTH_SHORT).show();
-        });
-        popupView.findViewById(R.id.optionReadLater).setOnClickListener(v -> {
-            popupWindow.dismiss();
-            Toast.makeText(this, "Đã thêm vào danh sách xem sau", Toast.LENGTH_SHORT).show();
-        });
-
         popupWindow.showAsDropDown(anchor, -popupWindow.getWidth() + anchor.getWidth(),
                 -anchor.getHeight() - getResources().getDimensionPixelSize(R.dimen.article_options_offset));
     }

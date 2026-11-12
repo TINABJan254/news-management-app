@@ -139,6 +139,11 @@ public class NewsFeedActivity extends AppCompatActivity {
             if (item.getItemId() == R.id.nav_news) {
                 return true;
             }
+            if (item.getItemId() == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                finish();
+                return true;
+            }
             if (item.getItemId() == R.id.nav_management) {
                 startActivity(new Intent(this, ManagementActivity.class));
                 finish();
