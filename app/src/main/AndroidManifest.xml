@@ -21,19 +21,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".view.activity.HomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.activity.ManagementActivity"
-            android:exported="false" />
-        <activity
             android:name=".view.activity.CategoryManagementActivity"
             android:exported="false" />
         <activity
             android:name=".view.activity.NewsManagementActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.activity.NewsFeedActivity"
             android:exported="false" />
         <activity
             android:name=".view.activity.NewsDetailActivity"
