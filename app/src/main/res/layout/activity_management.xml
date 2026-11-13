@@ -82,7 +82,8 @@
                             android:id="@+id/tvTotalArticles"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="1.240"
+                            android:text="0"
+                            tools:text="1.240"
                             android:textColor="@color/text_primary"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -120,7 +121,8 @@
                             android:id="@+id/tvTotalCategories"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="12"
+                            android:text="0"
+                            tools:text="12"
                             android:textColor="@color/text_primary"
                             android:textSize="24sp"
                             android:textStyle="bold" />

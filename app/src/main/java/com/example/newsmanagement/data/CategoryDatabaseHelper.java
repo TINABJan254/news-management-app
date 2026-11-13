@@ -3,6 +3,7 @@ package com.example.newsmanagement.data;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -68,6 +69,10 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
         }
 
         return categories;
+    }
+
+    public long getCategoryCount() {
+        return DatabaseUtils.queryNumEntries(getReadableDatabase(), TABLE_CATEGORIES);
     }
 
     public boolean categoryExists(String id) {

@@ -3,6 +3,7 @@ package com.example.newsmanagement.data;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -87,6 +88,10 @@ public class NewsDatabaseHelper extends SQLiteOpenHelper {
         }
 
         return newsList;
+    }
+
+    public long getNewsCount() {
+        return DatabaseUtils.queryNumEntries(getReadableDatabase(), TABLE_NEWS);
     }
 
     public boolean newsExists(String id) {

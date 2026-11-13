@@ -2,7 +2,6 @@ package com.example.newsmanagement.view.activity;
 
 import android.os.Bundle;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +12,10 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.card.MaterialCardView;
 import com.example.newsmanagement.R;
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
+
+import java.text.NumberFormat;
 
 public class ManagementActivity extends AppCompatActivity {
 
@@ -23,6 +26,8 @@ public class ManagementActivity extends AppCompatActivity {
     private MaterialCardView cardManageNews;
     private MaterialCardView cardManageCategories;
     private BottomNavigationView bottomNavigation;
+    private CategoryDatabaseHelper categoryDatabaseHelper;
+    private NewsDatabaseHelper newsDatabaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +41,25 @@ public class ManagementActivity extends AppCompatActivity {
             return insets;
         });
 
+        categoryDatabaseHelper = new CategoryDatabaseHelper(this);
+        newsDatabaseHelper = new NewsDatabaseHelper(this);
         initViews();
         setupEvents();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        NumberFormat numberFormat = NumberFormat.getIntegerInstance();
+        tvTotalArticles.setText(numberFormat.format(newsDatabaseHelper.getNewsCount()));
+        tvTotalCategories.setText(numberFormat.format(categoryDatabaseHelper.getCategoryCount()));
+    }
+
+    @Override
+    protected void onDestroy() {
+        newsDatabaseHelper.close();
+        categoryDatabaseHelper.close();
+        super.onDestroy();
     }
 
     private void initViews() {
