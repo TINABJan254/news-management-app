@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +32,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.data.NewsDatabaseHelper;
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
 import com.example.newsmanagement.view.adapter.NewsAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
@@ -53,13 +55,16 @@ public class NewsManagementActivity extends AppCompatActivity {
     private NewsDatabaseHelper newsDatabaseHelper;
 
     // Filter Chips
-    private TextView chipAll, chipSports, chipSocial, chipVehicles, chipLaw, chipWorld;
+    private TextView chipAll;
     private TextView currentSelectedChip;
+    private LinearLayout layoutCategoryChips;
+    private CategoryDatabaseHelper categoryDatabaseHelper;
 
     // Date Range Filter
     private View layoutDateRangePicker;
     private TextView tvStartDate, tvEndDate;
     private View btnApplyDateFilter;
+    private View btnClearDateFilter;
 
     private final ActivityResultLauncher<Intent> editNewsLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -110,11 +115,7 @@ public class NewsManagementActivity extends AppCompatActivity {
         setupData(savedInstanceState);
         setupEvents();
         if (savedInstanceState != null) {
-            View selectedChip = findViewById(savedInstanceState.getInt(
-                    STATE_CATEGORY_CHIP, R.id.chipAll));
-            if (selectedChip != null) {
-                selectedChip.performClick();
-            }
+            selectCategoryChip(savedInstanceState.getString(STATE_CATEGORY_CHIP, "Tất cả"));
         }
     }
 
@@ -124,18 +125,13 @@ public class NewsManagementActivity extends AppCompatActivity {
         etSearchNews = findViewById(R.id.etSearchNews);
         rvNews = findViewById(R.id.rvNews);
 
-        chipAll = findViewById(R.id.chipAll);
-        chipSports = findViewById(R.id.chipSports);
-        chipSocial = findViewById(R.id.chipSocial);
-        chipVehicles = findViewById(R.id.chipVehicles);
-        chipLaw = findViewById(R.id.chipLaw);
-        chipWorld = findViewById(R.id.chipWorld);
-        currentSelectedChip = chipAll;
+        layoutCategoryChips = findViewById(R.id.layoutCategoryChips);
 
         layoutDateRangePicker = findViewById(R.id.layoutDateRangePicker);
         tvStartDate = findViewById(R.id.tvStartDate);
         tvEndDate = findViewById(R.id.tvEndDate);
         btnApplyDateFilter = findViewById(R.id.btnApplyDateFilter);
+        btnClearDateFilter = findViewById(R.id.btnClearDateFilter);
 
         rvNews.setLayoutManager(new LinearLayoutManager(this));
     }
@@ -144,13 +140,15 @@ public class NewsManagementActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putSerializable(STATE_NEWS_LIST, new ArrayList<>(newsList));
-        outState.putInt(STATE_CATEGORY_CHIP, currentSelectedChip.getId());
+        outState.putString(STATE_CATEGORY_CHIP, currentSelectedChip.getText().toString());
     }
 
     @SuppressWarnings("unchecked")
     private void setupData(Bundle savedInstanceState) {
         newsDatabaseHelper = new NewsDatabaseHelper(this);
+        categoryDatabaseHelper = new CategoryDatabaseHelper(this);
         newsList = new ArrayList<>();
+        setupCategoryChips();
 
         if (savedInstanceState != null) {
             ArrayList<News> savedNews = BundleCompat.getSerializable(
@@ -218,33 +216,103 @@ public class NewsManagementActivity extends AppCompatActivity {
             newsAdapter.filterByCategory(clickedChip.getText().toString());
         };
 
-        chipAll.setOnClickListener(chipClickListener);
-        chipSports.setOnClickListener(chipClickListener);
-        chipSocial.setOnClickListener(chipClickListener);
-        chipVehicles.setOnClickListener(chipClickListener);
-        chipLaw.setOnClickListener(chipClickListener);
-        chipWorld.setOnClickListener(chipClickListener);
+        for (int i = 0; i < layoutCategoryChips.getChildCount(); i++) {
+            layoutCategoryChips.getChildAt(i).setOnClickListener(chipClickListener);
+        }
 
         // Lọc theo ngày
-        layoutDateRangePicker.setOnClickListener(v -> showDatePicker());
+        layoutDateRangePicker.setOnClickListener(v -> showStartDatePicker());
         btnApplyDateFilter.setOnClickListener(v -> {
             String start = tvStartDate.getText().toString();
             String end = tvEndDate.getText().toString();
-            Toast.makeText(this, "Lọc tin từ " + start + " đến " + end, Toast.LENGTH_SHORT).show();
+            if (!isValidDateRange(start, end)) {
+                Toast.makeText(this, "Khoảng thời gian không hợp lệ.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            newsAdapter.filterByDateRange(start, end);
+        });
+        btnClearDateFilter.setOnClickListener(v -> {
+            tvStartDate.setText("Từ ngày");
+            tvEndDate.setText("Đến ngày");
+            newsAdapter.filterByDateRange("", "");
         });
     }
 
-    private void showDatePicker() {
+    private void setupCategoryChips() {
+        layoutCategoryChips.removeAllViews();
+        chipAll = createCategoryChip("Tất cả", true);
+        layoutCategoryChips.addView(chipAll);
+        currentSelectedChip = chipAll;
+
+        for (Category category : categoryDatabaseHelper.getAllCategories()) {
+            layoutCategoryChips.addView(createCategoryChip(category.getName(), false));
+        }
+    }
+
+    private TextView createCategoryChip(String name, boolean selected) {
+        TextView chip = new TextView(this);
+        chip.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        chip.setText(name);
+        chip.setTextSize(12.5f);
+        chip.setTextColor(ContextCompat.getColor(this,
+                selected ? R.color.white : R.color.text_secondary));
+        chip.setBackgroundResource(selected ? R.drawable.bg_selected : R.drawable.bg_chip_unselected);
+        chip.setPadding(dp(14), dp(6), dp(14), dp(6));
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) chip.getLayoutParams();
+        params.setMarginEnd(dp(8));
+        chip.setLayoutParams(params);
+        chip.setClickable(true);
+        chip.setFocusable(true);
+        return chip;
+    }
+
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private void selectCategoryChip(String categoryName) {
+        for (int i = 0; i < layoutCategoryChips.getChildCount(); i++) {
+            TextView chip = (TextView) layoutCategoryChips.getChildAt(i);
+            if (chip.getText().toString().equalsIgnoreCase(categoryName)) {
+                chip.performClick();
+                return;
+            }
+        }
+        chipAll.performClick();
+    }
+
+    private void showStartDatePicker() {
         Calendar calendar = Calendar.getInstance();
-        int year = 2026;
-        int month = 10;
-        int day = 1;
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, y, m, d) -> {
-            String dateFormatted = String.format("%02d/%02d/%04d", m + 1, d, y);
+            String dateFormatted = String.format("%02d/%02d/%04d", d, m + 1, y);
             tvStartDate.setText(dateFormatted);
+            showEndDatePicker();
         }, year, month, day);
         datePickerDialog.show();
+    }
+
+    private void showEndDatePicker() {
+        Calendar calendar = Calendar.getInstance();
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, y, m, d) -> {
+            tvEndDate.setText(String.format("%02d/%02d/%04d", d, m + 1, y));
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+        datePickerDialog.show();
+    }
+
+    private boolean isValidDateRange(String start, String end) {
+        try {
+            java.text.SimpleDateFormat format =
+                    new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.ROOT);
+            format.setLenient(false);
+            return !format.parse(start).after(format.parse(end));
+        } catch (java.text.ParseException exception) {
+            return false;
+        }
     }
 
     private void showDeleteConfirmDialog(News news) {

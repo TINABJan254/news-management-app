@@ -16,6 +16,8 @@ import com.example.newsmanagement.model.News;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder> {
 
@@ -31,6 +33,8 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     private final OnNewsActionListener listener;
     private String searchQuery = "";
     private String selectedCategory = "";
+    private String startDate = "";
+    private String endDate = "";
 
     public NewsAdapter(Context context, List<News> newsList, OnNewsActionListener listener) {
         this.context = context;
@@ -100,6 +104,12 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         applyFilters();
     }
 
+    public void filterByDateRange(String startDate, String endDate) {
+        this.startDate = startDate == null ? "" : startDate;
+        this.endDate = endDate == null ? "" : endDate;
+        applyFilters();
+    }
+
     private void applyFilters() {
         List<News> filtered = new ArrayList<>();
         for (News item : newsListFull) {
@@ -108,12 +118,30 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
                     || item.getId().toLowerCase(Locale.ROOT).contains(searchQuery);
             boolean matchesCategory = selectedCategory.isEmpty()
                     || item.getCategoryName().equalsIgnoreCase(selectedCategory);
-            if (matchesQuery && matchesCategory) {
+            boolean matchesDate = matchesDateRange(item.getPublishDate());
+            if (matchesQuery && matchesCategory && matchesDate) {
                 filtered.add(item);
             }
         }
         newsList = filtered;
         notifyDataSetChanged();
+    }
+
+    private boolean matchesDateRange(String publishDate) {
+        if (startDate.isEmpty() && endDate.isEmpty()) {
+            return true;
+        }
+
+        try {
+            SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.ROOT);
+            format.setLenient(false);
+            long date = format.parse(publishDate).getTime();
+            long start = startDate.isEmpty() ? Long.MIN_VALUE : format.parse(startDate).getTime();
+            long end = endDate.isEmpty() ? Long.MAX_VALUE : format.parse(endDate).getTime();
+            return date >= start && date <= end;
+        } catch (ParseException exception) {
+            return false;
+        }
     }
 
     public static class NewsViewHolder extends RecyclerView.ViewHolder {
