@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.view.adapter.CategoryAdapter;
 import com.example.newsmanagement.model.Category;
 
@@ -40,6 +41,7 @@ public class CategoryManagementActivity extends AppCompatActivity {
     private CategoryAdapter categoryAdapter;
     private List<Category> categoryList;
     private CategoryDatabaseHelper databaseHelper;
+    private NewsDatabaseHelper newsDatabaseHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +70,12 @@ public class CategoryManagementActivity extends AppCompatActivity {
 
     private void setupData() {
         databaseHelper = new CategoryDatabaseHelper(this);
+        newsDatabaseHelper = new NewsDatabaseHelper(this);
         categoryList = databaseHelper.getAllCategories();
+        for (Category category : categoryList) {
+            category.setArticleCount(
+                    newsDatabaseHelper.getArticleCountByCategoryId(category.getId()));
+        }
 
         categoryAdapter = new CategoryAdapter(this, categoryList, new CategoryAdapter.OnCategoryActionListener() {
             @Override

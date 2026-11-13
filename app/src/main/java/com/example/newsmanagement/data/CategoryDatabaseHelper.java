@@ -21,7 +21,6 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_DESCRIPTION = "description";
-    private static final String COLUMN_ARTICLE_COUNT = "article_count";
 
     public CategoryDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -32,14 +31,23 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE " + TABLE_CATEGORIES + " ("
                 + COLUMN_ID + " TEXT PRIMARY KEY NOT NULL, "
                 + COLUMN_NAME + " TEXT NOT NULL, "
-                + COLUMN_DESCRIPTION + " TEXT NOT NULL DEFAULT '', "
-                + COLUMN_ARTICLE_COUNT + " INTEGER NOT NULL DEFAULT 0)");
+                + COLUMN_DESCRIPTION + " TEXT NOT NULL DEFAULT '')");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
-        onCreate(db);
+        if (oldVersion < 2) {
+            db.execSQL("CREATE TABLE categories_new ("
+                    + COLUMN_ID + " TEXT PRIMARY KEY NOT NULL, "
+                    + COLUMN_NAME + " TEXT NOT NULL, "
+                    + COLUMN_DESCRIPTION + " TEXT NOT NULL DEFAULT '')");
+            db.execSQL("INSERT INTO categories_new ("
+                    + COLUMN_ID + ", " + COLUMN_NAME + ", " + COLUMN_DESCRIPTION + ") "
+                    + "SELECT " + COLUMN_ID + ", " + COLUMN_NAME + ", " + COLUMN_DESCRIPTION
+                    + " FROM " + TABLE_CATEGORIES);
+            db.execSQL("DROP TABLE " + TABLE_CATEGORIES);
+            db.execSQL("ALTER TABLE categories_new RENAME TO " + TABLE_CATEGORIES);
+        }
     }
 
     public List<Category> getAllCategories() {
@@ -73,6 +81,20 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
                 null,
                 null)) {
             return cursor.moveToFirst();
+        }
+    }
+
+    public Category getCategoryById(String id) {
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor cursor = db.query(
+                TABLE_CATEGORIES,
+                null,
+                COLUMN_ID + " = ?",
+                new String[]{id},
+                null,
+                null,
+                null)) {
+            return cursor.moveToFirst() ? fromCursor(cursor) : null;
         }
     }
 
@@ -120,7 +142,6 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_ID, category.getId());
         values.put(COLUMN_NAME, category.getName());
         values.put(COLUMN_DESCRIPTION, category.getDescription());
-        values.put(COLUMN_ARTICLE_COUNT, category.getArticleCount());
         return values;
     }
 
@@ -129,6 +150,6 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ID)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME)),
                 cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ARTICLE_COUNT)));
+                0);
     }
 }
