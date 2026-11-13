@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.model.News;
 
@@ -61,6 +62,12 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         holder.tvNewsCategory.setText(news.getCategoryName());
         holder.tvNewsDate.setText(news.getPublishDate());
         holder.tvNewsTitle.setText(news.getTitle());
+        Glide.with(holder.itemView)
+                .load(news.getImageUrl())
+                .placeholder(R.drawable.ic_image_placeholder)
+                .error(R.drawable.ic_image_placeholder)
+                .centerCrop()
+                .into(holder.ivNewsThumbnail);
 
         // Click xem chi tiết bài viết
         holder.itemView.setOnClickListener(v -> {

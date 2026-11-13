@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.model.News;
+import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,12 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsVi
         holder.tvCategory.setText(news.getCategoryName());
         holder.tvTime.setText(news.getPublishDate());
         holder.tvTitle.setText(news.getTitle());
+        Glide.with(holder.itemView)
+                .load(news.getImageUrl())
+                .placeholder(R.drawable.ic_image_placeholder)
+                .error(R.drawable.ic_image_placeholder)
+                .centerCrop()
+                .into(holder.ivThumbnail);
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onNewsClick(news);
