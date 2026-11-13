@@ -107,7 +107,7 @@
             android:focusable="true"
             android:padding="8dp"
             android:src="@drawable/ic_arrow_back"
-            app:tint="@color/text_secondary" />
+            android:tint="@color/text_secondary" />
 
         <View
             android:layout_width="0dp"

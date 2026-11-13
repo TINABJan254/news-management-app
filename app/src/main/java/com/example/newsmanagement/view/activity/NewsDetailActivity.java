@@ -32,7 +32,7 @@ public class NewsDetailActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
@@ -75,8 +75,12 @@ public class NewsDetailActivity extends AppCompatActivity {
             popupWindow.dismiss();
             showFontSizeDialog(tvContent);
         });
+        popupView.measure(
+                View.MeasureSpec.makeMeasureSpec(popupWindow.getWidth(), View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         popupWindow.showAsDropDown(anchor, -popupWindow.getWidth() + anchor.getWidth(),
-                -anchor.getHeight() - getResources().getDimensionPixelSize(R.dimen.article_options_offset));
+                -anchor.getHeight() - popupView.getMeasuredHeight()
+                        - getResources().getDimensionPixelSize(R.dimen.article_options_offset));
     }
 
     private void showFontSizeDialog(TextView tvContent) {
