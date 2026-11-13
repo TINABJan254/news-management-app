@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.view.activity.NewsDetailActivity;
 import com.example.newsmanagement.view.adapter.NewsFeedAdapter;
 import com.example.newsmanagement.model.Category;
@@ -34,6 +36,11 @@ public class NewsFragment extends Fragment {
     private NewsFeedAdapter newsAdapter;
     private TextView selectedChip;
     private View rootView;
+    private LinearLayout categoryChipContainer;
+    private RecyclerView newsRecyclerView;
+    private NewsDatabaseHelper newsDatabaseHelper;
+    private CategoryDatabaseHelper categoryDatabaseHelper;
+    private List<String> loadedCategoryNames = new ArrayList<>();
 
     @Nullable
     @Override
@@ -47,36 +54,53 @@ public class NewsFragment extends Fragment {
         return rootView;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (categoryDatabaseHelper != null) {
+            List<Category> categories = categoryDatabaseHelper.getAllCategories();
+            List<String> categoryNames = new ArrayList<>();
+            for (Category category : categories) {
+                categoryNames.add(category.getName());
+            }
+            if (!categoryNames.equals(loadedCategoryNames)) {
+                setupCategoryChips(categories);
+                loadedCategoryNames = categoryNames;
+            }
+        }
+    }
+
     private void setupViews() {
         etSearch = rootView.findViewById(R.id.etSearch);
-        selectedChip = rootView.findViewById(R.id.chipLatest);
-        RecyclerView recyclerView = rootView.findViewById(R.id.rvNews);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        categoryChipContainer = rootView.findViewById(R.id.categoryChipContainer);
+        newsRecyclerView = rootView.findViewById(R.id.rvNews);
+        newsRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
     }
 
     private void setupData() {
-        Category vehicles = new Category("TL04", "Ô tô - Xe máy", "", 0);
-        Category sports = new Category("TL01", "Thể thao", "", 0);
-        Category world = new Category("TL05", "Thế giới", "", 0);
-        Category social = new Category("TL02", "Xã hội", "", 0);
-        Category life = new Category("TL06", "Đời sống", "", 0);
-        List<News> newsList = new ArrayList<>();
-        newsList.add(new News("TT-1082",
-                "Mẫu B-SUV Nhật Bản này được giảm hơn 200 triệu đồng mới về ngang đối thủ",
-                "", "", vehicles, "Admin", "1 giờ trước"));
-        newsList.add(new News("TT-1081", "Bắt giam người lái xe gây tai nạn rồi bỏ trốn khỏi hiện trường",
-                "", "", world, "Admin", "1 giờ trước"));
-        newsList.add(new News("TT-1080", "Mưa lớn làm nhiều cây trong các tuyến phố ở Hà Nội bị đổ",
-                "", "", social, "Admin", "2 giờ trước"));
-        newsList.add(new News("TT-1079", "Sản phụ bị đá đè đa chấn thương đã tử vong",
-                "", "", social, "Admin", "2 giờ trước"));
-        newsList.add(new News("TT-1078", "Hơn 1.500 người tham dự màn đồng diễn yoga lớn nhất tại Thái",
-                "", "", life, "Admin", "3 giờ trước"));
-        newsList.add(new News("TT-1077", "Đội tuyển quốc gia hoàn thiện chiến thuật trước giải vô địch",
-                "", "", sports, "Admin", "4 giờ trước"));
+        categoryDatabaseHelper = new CategoryDatabaseHelper(getActivity());
+        newsDatabaseHelper = new NewsDatabaseHelper(getActivity());
+        setupCategoryChips(categoryDatabaseHelper.getAllCategories());
+        List<News> newsList = newsDatabaseHelper.getAllNews();
 
         newsAdapter = new NewsFeedAdapter(getActivity(), newsList, this::openNews);
-        ((RecyclerView) rootView.findViewById(R.id.rvNews)).setAdapter(newsAdapter);
+        newsRecyclerView.setAdapter(newsAdapter);
+        newsRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@androidx.annotation.NonNull RecyclerView recyclerView,
+                                   int dx, int dy) {
+                if (dy <= 0 || !newsAdapter.hasMoreItems()) {
+                    return;
+                }
+                LinearLayoutManager layoutManager =
+                        (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager != null
+                        && layoutManager.findLastVisibleItemPosition()
+                        >= newsAdapter.getItemCount() - 3) {
+                    newsAdapter.loadNextPage();
+                }
+            }
+        });
     }
 
     private void setupEvents() {
@@ -88,6 +112,7 @@ public class NewsFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 newsAdapter.filter(s.toString());
+                newsRecyclerView.scrollToPosition(0);
             }
 
             @Override
@@ -95,22 +120,56 @@ public class NewsFragment extends Fragment {
             }
         });
 
-        int[] chipIds = {R.id.chipLatest, R.id.chipSports, R.id.chipSocial,
-                R.id.chipWorld, R.id.chipLife};
-        View.OnClickListener chipListener = view -> {
-            TextView chip = (TextView) view;
-            selectedChip.setBackgroundResource(R.drawable.bg_chip_unselected);
-            selectedChip.setTextColor(ContextCompat.getColor(getActivity(), R.color.text_secondary));
-            chip.setBackgroundResource(R.drawable.bg_selected);
-            chip.setTextColor(ContextCompat.getColor(getActivity(), R.color.white));
-            selectedChip = chip;
-            newsAdapter.filterByCategory(chip.getText().toString());
-        };
-        for (int chipId : chipIds) {
-            rootView.findViewById(chipId).setOnClickListener(chipListener);
-        }
         ((ImageView) rootView.findViewById(R.id.btnCategoryMenu)).setOnClickListener(
                 v -> showCategorySheet());
+    }
+
+    private void setupCategoryChips(List<Category> categories) {
+        categoryChipContainer.removeAllViews();
+        TextView latestChip = createCategoryChip("Mới nhất", true);
+        categoryChipContainer.addView(latestChip);
+        selectedChip = latestChip;
+
+        for (Category category : categories) {
+            categoryChipContainer.addView(createCategoryChip(category.getName(), false));
+        }
+
+        loadedCategoryNames = new ArrayList<>();
+        for (Category category : categories) {
+            loadedCategoryNames.add(category.getName());
+        }
+    }
+
+    private TextView createCategoryChip(String name, boolean selected) {
+        TextView chip = new TextView(getActivity());
+        chip.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(30)));
+        chip.setGravity(android.view.Gravity.CENTER);
+        chip.setPadding(dp(13), 0, dp(13), 0);
+        chip.setText(name);
+        chip.setTextSize(11);
+        chip.setTextColor(ContextCompat.getColor(getActivity(),
+                selected ? R.color.white : R.color.text_secondary));
+        chip.setBackgroundResource(selected ? R.drawable.bg_selected : R.drawable.bg_chip_unselected);
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) chip.getLayoutParams();
+        params.setMarginEnd(dp(16));
+        chip.setLayoutParams(params);
+        chip.setOnClickListener(v -> selectCategoryChip((TextView) v));
+        return chip;
+    }
+
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private void selectCategoryChip(TextView chip) {
+        selectedChip.setBackgroundResource(R.drawable.bg_chip_unselected);
+        selectedChip.setTextColor(ContextCompat.getColor(getActivity(), R.color.text_secondary));
+        chip.setBackgroundResource(R.drawable.bg_selected);
+        chip.setTextColor(ContextCompat.getColor(getActivity(), R.color.white));
+        selectedChip = chip;
+        newsAdapter.filterByCategory(chip.getText().toString());
+        newsRecyclerView.scrollToPosition(0);
     }
 
     private void showCategorySheet() {
@@ -127,47 +186,38 @@ public class NewsFragment extends Fragment {
             dialog.show();
             return;
         }
-        String[] categories = {"Mới nhất", "Bóng đá / Thể thao", "Xã hội", "Thế giới",
-                "Kinh doanh", "Bất động sản", "Sức khỏe", "Ô tô - Xe máy",
-                "Pháp luật", "Công nghệ"};
-        for (String category : categories) {
-            TextView option = (TextView) getActivity().getLayoutInflater().inflate(
-                    R.layout.item_news_category_option, container, false);
-            option.setText(category);
-            option.setCompoundDrawablesWithIntrinsicBounds(
-                    0, 0, categoryMatchesSelection(category) ? R.drawable.ic_check : 0, 0);
-            option.setOnClickListener(v -> {
-                selectCategory(category);
-                dialog.dismiss();
-            });
-            container.addView(option);
+        addCategoryOption(container, dialog, "Mới nhất");
+        for (Category category : categoryDatabaseHelper.getAllCategories()) {
+            addCategoryOption(container, dialog, category.getName());
         }
         dialog.show();
     }
 
+    private void addCategoryOption(LinearLayout container, BottomSheetDialog dialog, String category) {
+        TextView option = (TextView) getActivity().getLayoutInflater().inflate(
+                R.layout.item_news_category_option, container, false);
+        option.setText(category);
+        option.setCompoundDrawablesWithIntrinsicBounds(
+                0, 0, categoryMatchesSelection(category) ? R.drawable.ic_check : 0, 0);
+        option.setOnClickListener(v -> {
+            selectCategory(category);
+            dialog.dismiss();
+        });
+        container.addView(option);
+    }
+
     private boolean categoryMatchesSelection(String category) {
-        String selected = selectedChip.getText().toString();
-        return category.equals("Mới nhất") && selected.equals("Mới nhất")
-                || category.equals("Bóng đá / Thể thao")
-                && (selected.equals("Bóng đá") || selected.equals("Thể thao"));
+        return category.equalsIgnoreCase(selectedChip.getText().toString());
     }
 
     private void selectCategory(String category) {
-        String chipName = category.equals("Bóng đá / Thể thao") ? "Bóng đá" : category;
-        int[] chipIds = {R.id.chipLatest, R.id.chipSports, R.id.chipSocial,
-                R.id.chipWorld, R.id.chipLife};
-        for (int chipId : chipIds) {
-            TextView chip = rootView.findViewById(chipId);
-            if (chip.getText().toString().equals(chipName)) {
-                selectedChip.setBackgroundResource(R.drawable.bg_chip_unselected);
-                selectedChip.setTextColor(ContextCompat.getColor(getActivity(), R.color.text_secondary));
-                chip.setBackgroundResource(R.drawable.bg_selected);
-                chip.setTextColor(ContextCompat.getColor(getActivity(), R.color.white));
-                selectedChip = chip;
+        for (int i = 0; i < categoryChipContainer.getChildCount(); i++) {
+            TextView chip = (TextView) categoryChipContainer.getChildAt(i);
+            if (chip.getText().toString().equalsIgnoreCase(category)) {
+                selectCategoryChip(chip);
                 break;
             }
         }
-        newsAdapter.filterByCategory(category);
     }
 
     private void openNews(News news) {

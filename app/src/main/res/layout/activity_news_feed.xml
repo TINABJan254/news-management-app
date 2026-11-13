@@ -78,39 +78,13 @@
         app:layout_constraintTop_toBottomOf="@id/header">
 
         <LinearLayout
+            android:id="@+id/categoryChipContainer"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="20dp"
             android:paddingEnd="12dp">
-
-            <TextView
-                android:id="@+id/chipLatest"
-                style="@style/NewsFeedChip"
-                android:background="@drawable/bg_selected"
-                android:text="Mới nhất"
-                android:textColor="@color/white" />
-
-            <TextView
-                android:id="@+id/chipSports"
-                style="@style/NewsFeedChip"
-                android:text="Bóng đá" />
-
-            <TextView
-                android:id="@+id/chipSocial"
-                style="@style/NewsFeedChip"
-                android:text="Xã hội" />
-
-            <TextView
-                android:id="@+id/chipWorld"
-                style="@style/NewsFeedChip"
-                android:text="Thế giới" />
-
-            <TextView
-                android:id="@+id/chipLife"
-                style="@style/NewsFeedChip"
-                android:text="Đời sống" />
         </LinearLayout>
     </HorizontalScrollView>
 

@@ -19,6 +19,8 @@ import java.util.Locale;
 
 public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsViewHolder> {
 
+    private static final int PAGE_SIZE = 10;
+
     public interface OnNewsClickListener {
         void onNewsClick(News news);
     }
@@ -26,14 +28,18 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsVi
     private final Context context;
     private final OnNewsClickListener listener;
     private final List<News> allNews;
+    private List<News> filteredNews;
     private List<News> visibleNews;
     private String selectedCategory = "";
+    private String searchQuery = "";
 
     public NewsFeedAdapter(Context context, List<News> newsList, OnNewsClickListener listener) {
         this.context = context;
         this.listener = listener;
         this.allNews = new ArrayList<>(newsList);
-        this.visibleNews = new ArrayList<>(newsList);
+        this.filteredNews = new ArrayList<>(newsList);
+        this.visibleNews = new ArrayList<>();
+        showFirstPage();
     }
 
     @NonNull
@@ -62,34 +68,52 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsVi
     }
 
     public void filter(String query) {
-        String normalizedQuery = query == null ? "" : query.toLowerCase(Locale.ROOT).trim();
-        applyFilters(normalizedQuery);
+        searchQuery = query == null ? "" : query.toLowerCase(Locale.ROOT).trim();
+        applyFilters();
     }
 
     public void filterByCategory(String category) {
         selectedCategory = category == null || category.equalsIgnoreCase("Mới nhất")
                 ? "" : normalizeCategory(category);
-        applyFilters("");
+        applyFilters();
     }
 
     private String normalizeCategory(String category) {
-        return category.equalsIgnoreCase("Bóng đá")
-                || category.equalsIgnoreCase("Bóng đá / Thể thao")
-                ? "Thể thao" : category;
+        return category;
     }
 
-    private void applyFilters(String query) {
-        visibleNews = new ArrayList<>();
+    private void applyFilters() {
+        filteredNews = new ArrayList<>();
         for (News news : allNews) {
-            boolean matchesQuery = query.isEmpty()
-                    || news.getTitle().toLowerCase(Locale.ROOT).contains(query);
+            boolean matchesQuery = searchQuery.isEmpty()
+                    || news.getTitle().toLowerCase(Locale.ROOT).contains(searchQuery);
             boolean matchesCategory = selectedCategory.isEmpty()
                     || news.getCategoryName().equalsIgnoreCase(selectedCategory);
             if (matchesQuery && matchesCategory) {
-                visibleNews.add(news);
+                filteredNews.add(news);
             }
         }
+        showFirstPage();
         notifyDataSetChanged();
+    }
+
+    public boolean hasMoreItems() {
+        return visibleNews.size() < filteredNews.size();
+    }
+
+    public void loadNextPage() {
+        if (!hasMoreItems()) {
+            return;
+        }
+        int oldSize = visibleNews.size();
+        int newSize = Math.min(oldSize + PAGE_SIZE, filteredNews.size());
+        visibleNews.addAll(filteredNews.subList(oldSize, newSize));
+        notifyItemRangeInserted(oldSize, newSize - oldSize);
+    }
+
+    private void showFirstPage() {
+        int visibleItemCount = Math.min(PAGE_SIZE, filteredNews.size());
+        visibleNews = new ArrayList<>(filteredNews.subList(0, visibleItemCount));
     }
 
     static class NewsViewHolder extends RecyclerView.ViewHolder {
