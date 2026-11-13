@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder> {
 
+    public static final int PAGE_SIZE = 10;
+
     public interface OnNewsActionListener {
         void onEdit(News news);
         void onDelete(News news);
@@ -35,6 +37,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     private String selectedCategory = "";
     private String startDate = "";
     private String endDate = "";
+    private int currentPage = 1;
 
     public NewsAdapter(Context context, List<News> newsList, OnNewsActionListener listener) {
         this.context = context;
@@ -88,12 +91,14 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
 
     public void updateData(List<News> newList) {
         this.newsListFull = new ArrayList<>(newList);
+        currentPage = 1;
         applyFilters();
     }
 
     // Tìm kiếm theo từ khóa (tiêu đề hoặc mã tin)
     public void filter(String query) {
         searchQuery = query == null ? "" : query.toLowerCase(Locale.ROOT).trim();
+        currentPage = 1;
         applyFilters();
     }
 
@@ -101,12 +106,14 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     public void filterByCategory(String categoryName) {
         selectedCategory = categoryName == null || categoryName.equalsIgnoreCase("Tất cả")
                 ? "" : categoryName;
+        currentPage = 1;
         applyFilters();
     }
 
     public void filterByDateRange(String startDate, String endDate) {
         this.startDate = startDate == null ? "" : startDate;
         this.endDate = endDate == null ? "" : endDate;
+        currentPage = 1;
         applyFilters();
     }
 
@@ -123,8 +130,62 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
                 filtered.add(item);
             }
         }
-        newsList = filtered;
+        int pageCount = getPageCount(filtered.size());
+        if (pageCount == 0) {
+            currentPage = 1;
+            newsList = new ArrayList<>();
+        } else {
+            currentPage = Math.min(currentPage, pageCount);
+            int fromIndex = (currentPage - 1) * PAGE_SIZE;
+            int toIndex = Math.min(fromIndex + PAGE_SIZE, filtered.size());
+            newsList = new ArrayList<>(filtered.subList(fromIndex, toIndex));
+        }
         notifyDataSetChanged();
+    }
+
+    public int getCurrentPage() {
+        return currentPage;
+    }
+
+    public int getPageCount() {
+        return getPageCount(getFilteredItemCount());
+    }
+
+    public void goToPage(int page) {
+        int pageCount = getPageCount();
+        if (pageCount == 0) {
+            currentPage = 1;
+        } else {
+            currentPage = Math.max(1, Math.min(page, pageCount));
+        }
+        applyFilters();
+    }
+
+    public void goToPreviousPage() {
+        goToPage(currentPage - 1);
+    }
+
+    public void goToNextPage() {
+        goToPage(currentPage + 1);
+    }
+
+    private int getFilteredItemCount() {
+        int count = 0;
+        for (News item : newsListFull) {
+            boolean matchesQuery = searchQuery.isEmpty()
+                    || item.getTitle().toLowerCase(Locale.ROOT).contains(searchQuery)
+                    || item.getId().toLowerCase(Locale.ROOT).contains(searchQuery);
+            boolean matchesCategory = selectedCategory.isEmpty()
+                    || item.getCategoryName().equalsIgnoreCase(selectedCategory);
+            if (matchesQuery && matchesCategory && matchesDateRange(item.getPublishDate())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getPageCount(int itemCount) {
+        return (itemCount + PAGE_SIZE - 1) / PAGE_SIZE;
     }
 
     private boolean matchesDateRange(String publishDate) {

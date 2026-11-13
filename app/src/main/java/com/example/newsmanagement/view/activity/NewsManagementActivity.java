@@ -66,6 +66,11 @@ public class NewsManagementActivity extends AppCompatActivity {
     private View btnApplyDateFilter;
     private View btnClearDateFilter;
 
+    // Pagination
+    private TextView tvPage1, tvPage2, tvPage3, tvPageLast;
+    private View tvPageEllipsis;
+    private View btnPrevPage, btnNextPage;
+
     private final ActivityResultLauncher<Intent> editNewsLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() != RESULT_OK || result.getData() == null) {
@@ -80,6 +85,7 @@ public class NewsManagementActivity extends AppCompatActivity {
                     if (newsList.get(i).getId().equals(updatedNews.getId())) {
                         newsList.set(i, updatedNews);
                         newsAdapter.updateData(newsList);
+                        updatePagination();
                         break;
                     }
                 }
@@ -97,6 +103,7 @@ public class NewsManagementActivity extends AppCompatActivity {
                 }
                 newsList.add(0, addedNews);
                 newsAdapter.updateData(newsList);
+                updatePagination();
             });
 
     @Override
@@ -132,6 +139,13 @@ public class NewsManagementActivity extends AppCompatActivity {
         tvEndDate = findViewById(R.id.tvEndDate);
         btnApplyDateFilter = findViewById(R.id.btnApplyDateFilter);
         btnClearDateFilter = findViewById(R.id.btnClearDateFilter);
+        tvPage1 = findViewById(R.id.tvPage1);
+        tvPage2 = findViewById(R.id.tvPage2);
+        tvPage3 = findViewById(R.id.tvPage3);
+        tvPageEllipsis = findViewById(R.id.tvPageEllipsis);
+        tvPageLast = findViewById(R.id.tvPageLast);
+        btnPrevPage = findViewById(R.id.btnPrevPage);
+        btnNextPage = findViewById(R.id.btnNextPage);
 
         rvNews.setLayoutManager(new LinearLayoutManager(this));
     }
@@ -179,6 +193,7 @@ public class NewsManagementActivity extends AppCompatActivity {
             }
         });
         rvNews.setAdapter(newsAdapter);
+        updatePagination();
     }
 
     private void setupEvents() {
@@ -196,6 +211,7 @@ public class NewsManagementActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 newsAdapter.filter(s.toString());
+                updatePagination();
             }
 
             @Override
@@ -214,6 +230,7 @@ public class NewsManagementActivity extends AppCompatActivity {
             clickedChip.setTextColor(Color.WHITE);
             currentSelectedChip = clickedChip;
             newsAdapter.filterByCategory(clickedChip.getText().toString());
+            updatePagination();
         };
 
         for (int i = 0; i < layoutCategoryChips.getChildCount(); i++) {
@@ -230,12 +247,66 @@ public class NewsManagementActivity extends AppCompatActivity {
                 return;
             }
             newsAdapter.filterByDateRange(start, end);
+            updatePagination();
         });
         btnClearDateFilter.setOnClickListener(v -> {
             tvStartDate.setText("Từ ngày");
             tvEndDate.setText("Đến ngày");
             newsAdapter.filterByDateRange("", "");
+            updatePagination();
         });
+
+        btnPrevPage.setOnClickListener(v -> {
+            newsAdapter.goToPreviousPage();
+            updatePagination();
+        });
+        btnNextPage.setOnClickListener(v -> {
+            newsAdapter.goToNextPage();
+            updatePagination();
+        });
+        tvPage1.setOnClickListener(v -> goToPage(1));
+        tvPage2.setOnClickListener(v -> goToPage(Integer.parseInt(tvPage2.getText().toString())));
+        tvPage3.setOnClickListener(v -> goToPage(Integer.parseInt(tvPage3.getText().toString())));
+        tvPageLast.setOnClickListener(v -> goToPage(Integer.parseInt(tvPageLast.getText().toString())));
+    }
+
+    private void goToPage(int page) {
+        newsAdapter.goToPage(page);
+        updatePagination();
+    }
+
+    private void updatePagination() {
+        int pageCount = newsAdapter.getPageCount();
+        int currentPage = newsAdapter.getCurrentPage();
+        updatePageButton(tvPage1, 1, pageCount, currentPage);
+        updatePageButton(tvPage2, 2, pageCount, currentPage);
+        updatePageButton(tvPage3, 3, pageCount, currentPage);
+
+        boolean hasLastPage = pageCount > 3;
+        tvPageEllipsis.setVisibility(pageCount > 4 ? View.VISIBLE : View.GONE);
+        tvPageLast.setVisibility(hasLastPage ? View.VISIBLE : View.GONE);
+        if (hasLastPage) {
+            tvPageLast.setText(String.valueOf(pageCount));
+            updatePageButton(tvPageLast, pageCount, pageCount, currentPage);
+        }
+
+        btnPrevPage.setEnabled(currentPage > 1);
+        btnNextPage.setEnabled(currentPage < pageCount);
+        btnPrevPage.setAlpha(currentPage > 1 ? 1f : 0.5f);
+        btnNextPage.setAlpha(currentPage < pageCount ? 1f : 0.5f);
+    }
+
+    private void updatePageButton(TextView button, int page, int pageCount, int currentPage) {
+        boolean visible = page <= pageCount;
+        button.setVisibility(visible ? View.VISIBLE : View.GONE);
+        if (!visible) {
+            return;
+        }
+        button.setText(String.valueOf(page));
+        boolean selected = page == currentPage;
+        button.setBackgroundResource(selected ? R.drawable.bg_selected : 0);
+        button.setTextColor(ContextCompat.getColor(this,
+                selected ? R.color.white : R.color.text_secondary));
     }
 
     private void setupCategoryChips() {
@@ -334,6 +405,7 @@ public class NewsManagementActivity extends AppCompatActivity {
             }
             newsList.remove(news);
             newsAdapter.updateData(newsList);
+            updatePagination();
             Toast.makeText(this, "Đã xóa bài viết: " + news.getId(), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
