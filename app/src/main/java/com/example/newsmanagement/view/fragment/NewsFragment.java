@@ -147,7 +147,7 @@ public class NewsFragment extends Fragment {
         chip.setGravity(android.view.Gravity.CENTER);
         chip.setPadding(dp(13), 0, dp(13), 0);
         chip.setText(name);
-        chip.setTextSize(11);
+        chip.setTextSize(14);
         chip.setTextColor(ContextCompat.getColor(getActivity(),
                 selected ? R.color.white : R.color.text_secondary));
         chip.setBackgroundResource(selected ? R.drawable.bg_selected : R.drawable.bg_chip_unselected);

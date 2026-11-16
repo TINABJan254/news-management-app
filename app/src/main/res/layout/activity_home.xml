@@ -82,9 +82,9 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="▣ 10/11/2026"
+                        android:text="🗓️ 10/11/2026"
                         android:textColor="@color/white"
-                        android:textSize="8sp" />
+                        android:textSize="12sp" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -92,7 +92,7 @@
                         android:gravity="center"
                         android:text="5"
                         android:textColor="@color/white"
-                        android:textSize="20sp"
+                        android:textSize="22sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -101,7 +101,7 @@
                         android:gravity="center"
                         android:text="Tháng 5"
                         android:textColor="@color/white"
-                        android:textSize="8sp" />
+                        android:textSize="13sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -119,7 +119,7 @@
                         android:layout_height="wrap_content"
                         android:text="☁ Hà Nội"
                         android:textColor="@color/white"
-                        android:textSize="8sp" />
+                        android:textSize="13sp" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -127,7 +127,7 @@
                         android:gravity="center"
                         android:text="26°C"
                         android:textColor="@color/white"
-                        android:textSize="17sp"
+                        android:textSize="22sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -136,7 +136,7 @@
                         android:gravity="center"
                         android:text="Độ ẩm 97%"
                         android:textColor="@color/white"
-                        android:textSize="8sp" />
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -151,17 +151,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="☀ Giá xăng"
+                        android:text="⛽️ Giá xăng"
                         android:textColor="@color/nav_active_green"
-                        android:textSize="8sp" />
+                        android:textSize="13sp" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
-                        android:text="RON 95\n21.970\nXăng E5\n21.410"
+                        android:text="RON 95 - 21.970\nXăng E5 - 21.410"
                         android:textColor="@color/text_primary"
-                        android:textSize="8sp" />
+                        android:textSize="11sp" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -181,9 +181,9 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⦿  Tin tức mới nhất"
+                    android:text="Tin tức mới nhất"
                     android:textColor="@color/text_primary"
-                    android:textSize="13sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
 
                 <FrameLayout
@@ -220,7 +220,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textColor="@color/white"
-                            android:textSize="9sp" />
+                            android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/tvFeaturedTitle"
@@ -230,7 +230,7 @@
                             android:ellipsize="end"
                             android:maxLines="2"
                             android:textColor="@color/white"
-                            android:textSize="14sp"
+                            android:textSize="16sp"
                             android:textStyle="bold" />
 
                         <TextView
