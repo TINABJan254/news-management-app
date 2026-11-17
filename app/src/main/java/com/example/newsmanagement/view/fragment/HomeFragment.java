@@ -1,7 +1,9 @@
 package com.example.newsmanagement.view.fragment;
 
 import android.app.Fragment;
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,17 +11,24 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.api.ApiService;
 import com.example.newsmanagement.api.RetrofitClient;
+import com.example.newsmanagement.api.dto.WeatherResponse;
 import com.example.newsmanagement.api.dto.LunarDayResponse;
 import com.example.newsmanagement.view.activity.NewsDetailActivity;
 import com.example.newsmanagement.view.adapter.NewsFeedAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.location.FusedLocationProviderClient;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,7 +39,13 @@ import java.util.TimeZone;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
 public class HomeFragment extends Fragment {
+
+    private static final int LOCATION_PERMISSION_REQUEST = 100;
+    private static final double HANOI_LATITUDE = 21.0285;
+    private static final double HANOI_LONGITUDE = 105.8542;
+    private FusedLocationProviderClient locationClient;
 
     @Nullable
     @Override
@@ -40,7 +55,92 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.bottomNavigation).setVisibility(View.GONE);
         setupLatestNews(view);
         loadLunarDate(view);
+        loadWeather(view);
         return view;
+    }
+
+    private void loadWeather(View view) {
+        locationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        if (ContextCompat.checkSelfPermission(getActivity(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(getActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationClient.getCurrentLocation(
+                            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                            new CancellationTokenSource().getToken())
+                    .addOnSuccessListener(location -> {
+                        if (location == null) {
+                            requestWeather(view, HANOI_LATITUDE, HANOI_LONGITUDE, "Hà Nội");
+                        } else {
+                            requestWeather(view, location.getLatitude(), location.getLongitude(),
+                                    "Vị trí của bạn");
+                        }
+                    })
+                    .addOnFailureListener(exception ->
+                            requestWeather(view, HANOI_LATITUDE, HANOI_LONGITUDE, "Hà Nội"));
+        } else {
+            requestPermissions(new String[]{
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            }, LOCATION_PERMISSION_REQUEST);
+        }
+    }
+
+    private void requestWeather(View view, double latitude, double longitude, String locationName) {
+        TextView locationText = view.findViewById(R.id.tvWeatherLocation);
+        TextView temperatureText = view.findViewById(R.id.tvWeatherTemperature);
+        TextView humidityText = view.findViewById(R.id.tvWeatherHumidity);
+        locationText.setText("☁ " + locationName);
+
+        RetrofitClient.getApiService().getCurrentWeather(
+                        "https://api.open-meteo.com/v1/forecast",
+                        latitude,
+                        longitude,
+                        "temperature_2m,relative_humidity_2m,weather_code",
+                        "Asia/Bangkok")
+                .enqueue(new Callback<WeatherResponse>() {
+                    @Override
+                    public void onResponse(Call<WeatherResponse> call,
+                                           Response<WeatherResponse> response) {
+                        if (!response.isSuccessful()
+                                || response.body() == null
+                                || response.body().current == null) {
+                            temperatureText.setText("--°C");
+                            humidityText.setText("Không tải được thời tiết");
+                            return;
+                        }
+
+                        WeatherResponse weather = response.body();
+                        temperatureText.setText(String.format(Locale.ROOT, "%.0f°C",
+                                weather.current.temperature));
+                        humidityText.setText("Độ ẩm " + weather.current.humidity + "%");
+                    }
+
+                    @Override
+                    public void onFailure(Call<WeatherResponse> call, Throwable throwable) {
+                        temperatureText.setText("--°C");
+                        humidityText.setText("Không có kết nối");
+                    }
+                });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST && getView() != null) {
+            boolean permissionGranted = false;
+            for (int grantResult : grantResults) {
+                if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                    permissionGranted = true;
+                    break;
+                }
+            }
+            if (permissionGranted) {
+                loadWeather(getView());
+            } else {
+                requestWeather(getView(), HANOI_LATITUDE, HANOI_LONGITUDE, "Hà Nội");
+            }
+        }
     }
 
     private void loadLunarDate(View view) {
