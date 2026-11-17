@@ -324,13 +324,6 @@
                 android:paddingStart="14dp"
                 android:paddingEnd="16dp">
 
-                <ImageView
-                    android:layout_width="15dp"
-                    android:layout_height="15dp"
-                    android:layout_marginEnd="6dp"
-                    android:contentDescription="Filter icon"
-                    android:src="@drawable/ic_filter" />
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
