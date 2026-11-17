@@ -43,6 +43,7 @@ public class EditNewsActivity extends AppCompatActivity {
     private TextView tvNewsPublishDate;
     private Spinner spCategory;
     private EditText etNewsTitle;
+    private EditText etNewsAuthor;
     private EditText etNewsImageUrl;
     private EditText etNewsDetail;
     private TextView btnCancel;
@@ -89,6 +90,7 @@ public class EditNewsActivity extends AppCompatActivity {
         tvNewsPublishDate = findViewById(R.id.tvNewsPublishDate);
         spCategory = findViewById(R.id.spCategory);
         etNewsTitle = findViewById(R.id.etNewsTitle);
+        etNewsAuthor = findViewById(R.id.etNewsAuthor);
         etNewsImageUrl = findViewById(R.id.etNewsImageUrl);
         etNewsDetail = findViewById(R.id.etNewsDetail);
         btnCancel = findViewById(R.id.btnCancel);
@@ -136,6 +138,7 @@ public class EditNewsActivity extends AppCompatActivity {
         // Fill dữ liệu sẵn vào các trường
         etNewsCode.setText(news.getId());
         etNewsTitle.setText(news.getTitle());
+        etNewsAuthor.setText(news.getAuthor());
         etNewsDetail.setText(news.getDetail());
         etNewsImageUrl.setText(news.getImageUrl());
 
@@ -193,6 +196,7 @@ public class EditNewsActivity extends AppCompatActivity {
 
     private void handleUpdateNews() {
         String title = etNewsTitle.getText().toString().trim();
+        String author = etNewsAuthor.getText().toString().trim();
         String detail = etNewsDetail.getText().toString().trim();
         String imageUrl = etNewsImageUrl.getText().toString().trim();
         String publishDate = tvNewsPublishDate.getText().toString().trim();
@@ -200,6 +204,12 @@ public class EditNewsActivity extends AppCompatActivity {
         if (title.isEmpty()) {
             etNewsTitle.setError("Vui lòng nhập tiêu đề bài viết!");
             etNewsTitle.requestFocus();
+            return;
+        }
+
+        if (author.isEmpty()) {
+            etNewsAuthor.setError("Vui lòng nhập tác giả bài viết!");
+            etNewsAuthor.requestFocus();
             return;
         }
 
@@ -217,6 +227,7 @@ public class EditNewsActivity extends AppCompatActivity {
         Category selectedCategory = categoryList.get(selectedIndex);
 
         news.setTitle(title);
+        news.setAuthor(author);
         news.setDetail(detail);
         news.setImageUrl(imageUrl);
         news.setCategory(selectedCategory);

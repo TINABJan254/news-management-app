@@ -39,6 +39,7 @@ public class AddNewsActivity extends AppCompatActivity {
     private TextView tvNewsPublishDate;
     private Spinner spCategory;
     private EditText etNewsTitle;
+    private EditText etNewsAuthor;
     private EditText etNewsImageUrl;
     private ImageView ivNewsPreview;
     private EditText etNewsDetail;
@@ -73,6 +74,7 @@ public class AddNewsActivity extends AppCompatActivity {
         tvNewsPublishDate = findViewById(R.id.tvNewsPublishDate);
         spCategory = findViewById(R.id.spCategory);
         etNewsTitle = findViewById(R.id.etNewsTitle);
+        etNewsAuthor = findViewById(R.id.etNewsAuthor);
         etNewsImageUrl = findViewById(R.id.etNewsImageUrl);
         ivNewsPreview = findViewById(R.id.ivNewsPreview);
         etNewsDetail = findViewById(R.id.etNewsDetail);
@@ -126,6 +128,7 @@ public class AddNewsActivity extends AppCompatActivity {
     private void handleSaveNews() {
         String code = newsDatabaseHelper.getNextNewsId();
         String title = etNewsTitle.getText().toString().trim();
+        String author = etNewsAuthor.getText().toString().trim();
         String detail = etNewsDetail.getText().toString().trim();
         String imageUrl = etNewsImageUrl.getText().toString().trim();
         String publishDate = tvNewsPublishDate.getText().toString().trim();
@@ -133,6 +136,12 @@ public class AddNewsActivity extends AppCompatActivity {
         if (title.isEmpty()) {
             etNewsTitle.setError("Vui lòng nhập tiêu đề bài viết!");
             etNewsTitle.requestFocus();
+            return;
+        }
+
+        if (author.isEmpty()) {
+            etNewsAuthor.setError("Vui lòng nhập tác giả bài viết!");
+            etNewsAuthor.requestFocus();
             return;
         }
 
@@ -156,7 +165,7 @@ public class AddNewsActivity extends AppCompatActivity {
         }
         Category selectedCategory = categoryList.get(selectedIndex);
 
-        News news = new News(code, title, detail, imageUrl, selectedCategory, "Admin", publishDate);
+        News news = new News(code, title, detail, imageUrl, selectedCategory, author, publishDate);
 
         newsDatabaseHelper.insertNews(news);
         Intent resultIntent = new Intent();

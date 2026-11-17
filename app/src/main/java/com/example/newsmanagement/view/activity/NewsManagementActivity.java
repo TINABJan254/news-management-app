@@ -189,7 +189,9 @@ public class NewsManagementActivity extends AppCompatActivity {
 
             @Override
             public void onItemClick(News news) {
-                Toast.makeText(NewsManagementActivity.this, "Xem chi tiết: " + news.getTitle(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(NewsManagementActivity.this, NewsDetailActivity.class);
+                intent.putExtra(NewsDetailActivity.EXTRA_NEWS, news);
+                startActivity(intent);
             }
         });
         rvNews.setAdapter(newsAdapter);

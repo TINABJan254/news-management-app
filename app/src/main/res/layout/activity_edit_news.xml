@@ -238,7 +238,34 @@
                 android:textColorHint="@color/text_caption"
                 android:textSize="14sp" />
 
-            <!-- Hàng 4: Chọn / Nhập link hình ảnh -->
+            <!-- Hàng 4: Tác giả -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Tác giả bài viết *"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/etNewsAuthor"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_input_field"
+                android:hint="Nhập tên tác giả..."
+                android:importantForAutofill="no"
+                android:inputType="textCapWords"
+                android:imeOptions="actionNext"
+                android:maxLines="1"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_caption"
+                android:textSize="13.5sp" />
+
+            <!-- Hàng 5: Chọn / Nhập link hình ảnh -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -285,7 +312,7 @@
                     android:src="@drawable/ic_image_placeholder" />
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Hàng 5: Chi tiết nội dung -->
+            <!-- Hàng 6: Chi tiết nội dung -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
