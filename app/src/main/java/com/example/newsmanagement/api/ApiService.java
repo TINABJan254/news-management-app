@@ -1,7 +1,10 @@
 package com.example.newsmanagement.api;
 
 import com.example.newsmanagement.api.dto.LunarDayResponse;
+import com.example.newsmanagement.api.dto.FuelPrice;
 import com.example.newsmanagement.api.dto.WeatherResponse;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -13,6 +16,10 @@ public interface ApiService {
 
     @GET("api/ngay/{date}")
     Call<LunarDayResponse> getLunarDay(@Path("date") String date);
+
+    @GET
+    Call<List<List<FuelPrice>>> getFuelPrices(
+            @Url String url);
 
     @GET
     Call<WeatherResponse> getCurrentWeather(

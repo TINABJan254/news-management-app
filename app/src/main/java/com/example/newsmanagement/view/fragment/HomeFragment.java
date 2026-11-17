@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.api.ApiService;
 import com.example.newsmanagement.api.RetrofitClient;
+import com.example.newsmanagement.api.dto.FuelPrice;
 import com.example.newsmanagement.api.dto.WeatherResponse;
 import com.example.newsmanagement.api.dto.LunarDayResponse;
 import com.example.newsmanagement.view.activity.NewsDetailActivity;
@@ -31,6 +32,7 @@ import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.location.FusedLocationProviderClient;
 
 import java.text.SimpleDateFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -56,7 +58,62 @@ public class HomeFragment extends Fragment {
         setupLatestNews(view);
         loadLunarDate(view);
         loadWeather(view);
+        loadFuelPrices(view);
         return view;
+    }
+
+    private void loadFuelPrices(View view) {
+        TextView fuelPrices = view.findViewById(R.id.tvFuelPrices);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        String date = dateFormat.format(new java.util.Date());
+
+        RetrofitClient.getApiService().getFuelPrices(
+                        "https://giaxanghomnay.com/api/pvdate/" + date)
+                .enqueue(new Callback<List<List<FuelPrice>>>() {
+                    @Override
+                    public void onResponse(
+                            Call<List<List<FuelPrice>>> call,
+                            Response<List<List<FuelPrice>>> response) {
+                        if (!response.isSuccessful()
+                                || response.body() == null
+                                || response.body().isEmpty()) {
+                            fuelPrices.setText("Không tải được giá xăng");
+                            return;
+                        }
+
+                        FuelPrice ron95 = null;
+                        FuelPrice e5 = null;
+                        for (FuelPrice fuel : response.body().get(0)) {
+                            if (fuel.title == null) {
+                                continue;
+                            }
+                            if (fuel.title.contains("RON 95") && fuel.title.contains("Mức 3")) {
+                                ron95 = fuel;
+                            } else if (fuel.title.contains("E5 RON 92")) {
+                                e5 = fuel;
+                            }
+                        }
+
+                        fuelPrices.setText("E10 R95 - " + formatPrice(ron95)
+                                + "\nE5 R92  - " + formatPrice(e5));
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<List<List<FuelPrice>>> call,
+                            Throwable throwable) {
+                        fuelPrices.setText("Không có kết nối");
+                    }
+                });
+    }
+
+    private String formatPrice(FuelPrice fuel) {
+        if (fuel == null) {
+            return "--";
+        }
+        return NumberFormat.getNumberInstance(new Locale("vi", "VN"))
+                .format(fuel.zone1Price);
     }
 
     private void loadWeather(View view) {
