@@ -80,6 +80,7 @@
                     android:padding="8dp">
 
                     <TextView
+                        android:id="@+id/tvLunarSolarDate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="🗓️ 10/11/2026"
@@ -87,19 +88,21 @@
                         android:textSize="12sp" />
 
                     <TextView
+                        android:id="@+id/tvLunarDate"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="5"
+                        android:text="--"
                         android:textColor="@color/white"
                         android:textSize="22sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvLunarMonth"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="Tháng 5"
+                        android:text="Đang tải lịch âm..."
                         android:textColor="@color/white"
                         android:textSize="13sp" />
                 </LinearLayout>

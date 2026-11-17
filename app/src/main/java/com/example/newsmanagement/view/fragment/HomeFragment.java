@@ -13,14 +13,23 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.newsmanagement.R;
+import com.example.newsmanagement.api.ApiService;
+import com.example.newsmanagement.api.RetrofitClient;
+import com.example.newsmanagement.api.dto.LunarDayResponse;
 import com.example.newsmanagement.view.activity.NewsDetailActivity;
 import com.example.newsmanagement.view.adapter.NewsFeedAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 public class HomeFragment extends Fragment {
 
     @Nullable
@@ -30,7 +39,51 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.activity_home, container, false);
         view.findViewById(R.id.bottomNavigation).setVisibility(View.GONE);
         setupLatestNews(view);
+        loadLunarDate(view);
         return view;
+    }
+
+    private void loadLunarDate(View view) {
+        TextView solarDate = view.findViewById(R.id.tvLunarSolarDate);
+        TextView lunarDate = view.findViewById(R.id.tvLunarDate);
+        TextView lunarMonth = view.findViewById(R.id.tvLunarMonth);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+        String date = dateFormat.format(new java.util.Date());
+
+        ApiService service = RetrofitClient.getApiService();
+
+        service.getLunarDay(date).enqueue(new Callback<LunarDayResponse>() {
+            @Override
+            public void onResponse(
+                    Call<LunarDayResponse> call,
+                    Response<LunarDayResponse> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    lunarDate.setText("--");
+                    lunarMonth.setText("Không tải được lịch âm");
+                    return;
+                }
+
+                LunarDayResponse data = response.body();
+                solarDate.setText("🗓️ " + data.ngayDuong);
+                if (data.amLich != null) {
+                    lunarDate.setText(String.valueOf(data.amLich.ngay));
+                    lunarMonth.setText("Tháng " + data.amLich.thang
+                            + (data.canChi == null ? "" : " \n " + data.canChi.nam));
+                } else {
+                    lunarDate.setText("--");
+                    lunarMonth.setText("Không có dữ liệu âm lịch");
+                }
+            }
+
+            @Override
+            public void onFailure(
+                    Call<LunarDayResponse> call,
+                    Throwable throwable) {
+                lunarDate.setText("--");
+                lunarMonth.setText("Không có kết nối");
+            }
+        });
     }
 
     private void setupLatestNews(View view) {
