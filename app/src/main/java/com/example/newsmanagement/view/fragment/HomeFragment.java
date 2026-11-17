@@ -22,9 +22,9 @@ import com.example.newsmanagement.api.RetrofitClient;
 import com.example.newsmanagement.api.dto.FuelPrice;
 import com.example.newsmanagement.api.dto.WeatherResponse;
 import com.example.newsmanagement.api.dto.LunarDayResponse;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.view.activity.NewsDetailActivity;
 import com.example.newsmanagement.view.adapter.NewsFeedAdapter;
-import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
@@ -244,35 +244,36 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupLatestNews(View view) {
-        Category social = new Category("TL02", "Xã hội", "", 0);
-        Category world = new Category("TL05", "Thế giới", "", 0);
-        Category sports = new Category("TL01", "Thể thao", "", 0);
-        News featuredNews = new News("TT-1080", "Miền Bắc mưa đến khi nào?",
-                "Dự báo thời tiết mới nhất khu vực miền Bắc.",
-                "", social, "Admin", "6 giờ trước");
-
-        List<News> newsList = new ArrayList<>();
-        newsList.add(new News("TT-1079", "Mưa lớn làm nhiều cây đổ tại Hà Nội",
-                "Thông tin mới nhất từ hiện trường.", "", social, "Admin", "2 giờ trước"));
-        newsList.add(new News("TT-1078", "Nhà lãnh đạo EU tổ chức họp khẩn",
-                "Các nước châu Âu thảo luận những vấn đề quan trọng.",
-                "", world, "Admin", "5 giờ trước"));
-        newsList.add(new News("TT-1077", "Đội tuyển quốc gia chuẩn bị cho giải đấu mới",
-                "Đội tuyển đang hoàn thiện chiến thuật.",
-                "", sports, "Admin", "7 giờ trước"));
+        NewsDatabaseHelper databaseHelper = new NewsDatabaseHelper(getActivity());
+        List<News> latestNews = databaseHelper.getAllNews();
+        databaseHelper.close();
 
         TextView category = view.findViewById(R.id.tvFeaturedCategory);
         TextView title = view.findViewById(R.id.tvFeaturedTitle);
-        TextView time = view.findViewById(R.id.tvFeaturedTime);
-        category.setText(featuredNews.getCategoryName() + " · " + featuredNews.getPublishDate());
-        title.setText(featuredNews.getTitle());
-        time.setText("34 nghìn lượt xem");
-        view.findViewById(R.id.featuredNews).setOnClickListener(v -> openNews(featuredNews));
-
+        View featuredView = view.findViewById(R.id.featuredNews);
         RecyclerView recyclerView = view.findViewById(R.id.rvLatestNews);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+        if (latestNews.isEmpty()) {
+            featuredView.setVisibility(View.GONE);
+            recyclerView.setAdapter(new NewsFeedAdapter(
+                    getActivity(), new ArrayList<>(), this::openNews));
+            return;
+        }
+
+        int newsCount = Math.min(5, latestNews.size());
+        News featuredNews = latestNews.get(0);
+        List<News> newsList = new ArrayList<>(latestNews.subList(1, newsCount));
+
+        category.setText(featuredNews.getCategoryName() + " · " + featuredNews.getPublishDate());
+        title.setText(featuredNews.getTitle());
+        featuredView.setOnClickListener(v -> openNews(featuredNews));
         recyclerView.setAdapter(new NewsFeedAdapter(getActivity(), newsList, this::openNews));
     }
+
+    
+
+        
 
     private void openNews(News news) {
         Intent intent = new Intent(getActivity(), NewsDetailActivity.class);
