@@ -103,6 +103,23 @@ public class CategoryDatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public String getCategoryIdByName(String name) {
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor cursor = db.query(
+                TABLE_CATEGORIES,
+                new String[]{COLUMN_ID},
+                COLUMN_NAME + " = ?",
+                new String[]{name},
+                null,
+                null,
+                null,
+                "1")) {
+            return cursor.moveToFirst()
+                    ? cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ID))
+                    : null;
+        }
+    }
+
     public String getNextCategoryId() {
         SQLiteDatabase db = getReadableDatabase();
         String nextId = "TL01";

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -16,6 +17,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.newsmanagement.R;
 import com.example.newsmanagement.api.ApiService;
 import com.example.newsmanagement.api.RetrofitClient;
@@ -245,11 +247,12 @@ public class HomeFragment extends Fragment {
 
     private void setupLatestNews(View view) {
         NewsDatabaseHelper databaseHelper = new NewsDatabaseHelper(getActivity());
-        List<News> latestNews = databaseHelper.getAllNews();
+        List<News> latestNews = databaseHelper.getNewsPage("", "", "", "", 1, 5);
         databaseHelper.close();
 
         TextView category = view.findViewById(R.id.tvFeaturedCategory);
         TextView title = view.findViewById(R.id.tvFeaturedTitle);
+        ImageView featuredImage = view.findViewById(R.id.ivFeaturedNews);
         View featuredView = view.findViewById(R.id.featuredNews);
         RecyclerView recyclerView = view.findViewById(R.id.rvLatestNews);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -267,6 +270,12 @@ public class HomeFragment extends Fragment {
 
         category.setText(featuredNews.getCategoryName() + " · " + featuredNews.getPublishDate());
         title.setText(featuredNews.getTitle());
+        Glide.with(featuredImage)
+                .load(featuredNews.getImageUrl())
+                .placeholder(R.drawable.ic_image_placeholder)
+                .error(R.drawable.ic_image_placeholder)
+                .centerCrop()
+                .into(featuredImage);
         featuredView.setOnClickListener(v -> openNews(featuredNews));
         recyclerView.setAdapter(new NewsFeedAdapter(getActivity(), newsList, this::openNews));
     }

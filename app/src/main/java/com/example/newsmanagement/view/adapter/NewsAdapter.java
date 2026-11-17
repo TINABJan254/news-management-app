@@ -1,6 +1,8 @@
 package com.example.newsmanagement.view.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,13 +14,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.newsmanagement.R;
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.model.News;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder> {
 
@@ -31,20 +36,31 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     }
 
     private final Context context;
-    private List<News> newsList;
-    private List<News> newsListFull;
+    private final NewsDatabaseHelper newsDatabaseHelper;
+    private final CategoryDatabaseHelper categoryDatabaseHelper;
     private final OnNewsActionListener listener;
+    private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final AtomicLong latestRequest = new AtomicLong();
+    private List<News> newsList = new ArrayList<>();
     private String searchQuery = "";
     private String selectedCategory = "";
     private String startDate = "";
     private String endDate = "";
     private int currentPage = 1;
+    private int totalCount;
+    private Runnable onDataLoadedListener;
 
-    public NewsAdapter(Context context, List<News> newsList, OnNewsActionListener listener) {
+    public NewsAdapter(
+            Context context,
+            NewsDatabaseHelper newsDatabaseHelper,
+            CategoryDatabaseHelper categoryDatabaseHelper,
+            OnNewsActionListener listener) {
         this.context = context;
-        this.newsList = new ArrayList<>(newsList);
-        this.newsListFull = new ArrayList<>(newsList);
+        this.newsDatabaseHelper = newsDatabaseHelper;
+        this.categoryDatabaseHelper = categoryDatabaseHelper;
         this.listener = listener;
+        loadPage(1);
     }
 
     @NonNull
@@ -57,7 +73,6 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     @Override
     public void onBindViewHolder(@NonNull NewsViewHolder holder, int position) {
         News news = newsList.get(position);
-
         holder.tvNewsCode.setText(news.getId());
         holder.tvNewsCategory.setText(news.getCategoryName());
         holder.tvNewsDate.setText(news.getPublishDate());
@@ -69,21 +84,16 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
                 .centerCrop()
                 .into(holder.ivNewsThumbnail);
 
-        // Click xem chi tiết bài viết
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onItemClick(news);
             }
         });
-
-        // Click nút Sửa
         holder.btnEditNews.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onEdit(news);
             }
         });
-
-        // Click nút Xóa
         holder.btnDeleteNews.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onDelete(news);
@@ -93,61 +103,28 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
 
     @Override
     public int getItemCount() {
-        return newsList != null ? newsList.size() : 0;
+        return newsList.size();
     }
 
-    public void updateData(List<News> newList) {
-        this.newsListFull = new ArrayList<>(newList);
-        currentPage = 1;
-        applyFilters();
+    public void setOnDataLoadedListener(Runnable listener) {
+        onDataLoadedListener = listener;
     }
 
-    // Tìm kiếm theo từ khóa (tiêu đề hoặc mã tin)
     public void filter(String query) {
-        searchQuery = query == null ? "" : query.toLowerCase(Locale.ROOT).trim();
-        currentPage = 1;
-        applyFilters();
+        searchQuery = query == null ? "" : query.trim();
+        loadPage(1);
     }
 
-    // Lọc theo thể loại
     public void filterByCategory(String categoryName) {
         selectedCategory = categoryName == null || categoryName.equalsIgnoreCase("Tất cả")
-                ? "" : categoryName;
-        currentPage = 1;
-        applyFilters();
+                ? "" : categoryName.trim();
+        loadPage(1);
     }
 
     public void filterByDateRange(String startDate, String endDate) {
         this.startDate = startDate == null ? "" : startDate;
         this.endDate = endDate == null ? "" : endDate;
-        currentPage = 1;
-        applyFilters();
-    }
-
-    private void applyFilters() {
-        List<News> filtered = new ArrayList<>();
-        for (News item : newsListFull) {
-            boolean matchesQuery = searchQuery.isEmpty()
-                    || item.getTitle().toLowerCase(Locale.ROOT).contains(searchQuery)
-                    || item.getId().toLowerCase(Locale.ROOT).contains(searchQuery);
-            boolean matchesCategory = selectedCategory.isEmpty()
-                    || item.getCategoryName().equalsIgnoreCase(selectedCategory);
-            boolean matchesDate = matchesDateRange(item.getPublishDate());
-            if (matchesQuery && matchesCategory && matchesDate) {
-                filtered.add(item);
-            }
-        }
-        int pageCount = getPageCount(filtered.size());
-        if (pageCount == 0) {
-            currentPage = 1;
-            newsList = new ArrayList<>();
-        } else {
-            currentPage = Math.min(currentPage, pageCount);
-            int fromIndex = (currentPage - 1) * PAGE_SIZE;
-            int toIndex = Math.min(fromIndex + PAGE_SIZE, filtered.size());
-            newsList = new ArrayList<>(filtered.subList(fromIndex, toIndex));
-        }
-        notifyDataSetChanged();
+        loadPage(1);
     }
 
     public int getCurrentPage() {
@@ -155,17 +132,11 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
     }
 
     public int getPageCount() {
-        return getPageCount(getFilteredItemCount());
+        return (totalCount + PAGE_SIZE - 1) / PAGE_SIZE;
     }
 
     public void goToPage(int page) {
-        int pageCount = getPageCount();
-        if (pageCount == 0) {
-            currentPage = 1;
-        } else {
-            currentPage = Math.max(1, Math.min(page, pageCount));
-        }
-        applyFilters();
+        loadPage(Math.max(1, page));
     }
 
     public void goToPreviousPage() {
@@ -176,40 +147,44 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         goToPage(currentPage + 1);
     }
 
-    private int getFilteredItemCount() {
-        int count = 0;
-        for (News item : newsListFull) {
-            boolean matchesQuery = searchQuery.isEmpty()
-                    || item.getTitle().toLowerCase(Locale.ROOT).contains(searchQuery)
-                    || item.getId().toLowerCase(Locale.ROOT).contains(searchQuery);
-            boolean matchesCategory = selectedCategory.isEmpty()
-                    || item.getCategoryName().equalsIgnoreCase(selectedCategory);
-            if (matchesQuery && matchesCategory && matchesDateRange(item.getPublishDate())) {
-                count++;
-            }
-        }
-        return count;
+    public void refresh() {
+        loadPage(currentPage);
     }
 
-    private int getPageCount(int itemCount) {
-        return (itemCount + PAGE_SIZE - 1) / PAGE_SIZE;
+    private void loadPage(int page) {
+        int requestedPage = Math.max(1, page);
+        long requestId = latestRequest.incrementAndGet();
+        queryExecutor.execute(() -> {
+            String categoryId = categoryDatabaseHelper.getCategoryIdByName(selectedCategory);
+            int count = newsDatabaseHelper.getNewsCount(
+                    searchQuery, categoryId, startDate, endDate);
+            List<News> pageData = newsDatabaseHelper.getNewsPage(
+                    searchQuery, categoryId, startDate, endDate, requestedPage, PAGE_SIZE);
+            mainHandler.post(() -> {
+                if (requestId != latestRequest.get()) {
+                    return;
+                }
+                totalCount = count;
+                currentPage = count == 0
+                        ? 1
+                        : Math.min(requestedPage, getPageCount());
+                if (currentPage != requestedPage) {
+                    loadPage(currentPage);
+                    return;
+                }
+                newsList = pageData;
+                notifyDataSetChanged();
+                if (onDataLoadedListener != null) {
+                    onDataLoadedListener.run();
+                }
+            });
+        });
     }
 
-    private boolean matchesDateRange(String publishDate) {
-        if (startDate.isEmpty() && endDate.isEmpty()) {
-            return true;
-        }
-
-        try {
-            SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy", Locale.ROOT);
-            format.setLenient(false);
-            long date = format.parse(publishDate).getTime();
-            long start = startDate.isEmpty() ? Long.MIN_VALUE : format.parse(startDate).getTime();
-            long end = endDate.isEmpty() ? Long.MAX_VALUE : format.parse(endDate).getTime();
-            return date >= start && date <= end;
-        } catch (ParseException exception) {
-            return false;
-        }
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        queryExecutor.shutdownNow();
+        super.onDetachedFromRecyclerView(recyclerView);
     }
 
     public static class NewsViewHolder extends RecyclerView.ViewHolder {

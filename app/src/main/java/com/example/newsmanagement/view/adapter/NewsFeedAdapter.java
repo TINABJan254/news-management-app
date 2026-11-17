@@ -1,6 +1,8 @@
 package com.example.newsmanagement.view.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,17 +12,22 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.newsmanagement.R;
-import com.example.newsmanagement.model.News;
 import com.bumptech.glide.Glide;
+import com.example.newsmanagement.R;
+import com.example.newsmanagement.data.CategoryDatabaseHelper;
+import com.example.newsmanagement.data.NewsDatabaseHelper;
+import com.example.newsmanagement.model.News;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsViewHolder> {
 
-    private static final int PAGE_SIZE = 10;
+    public static final int PAGE_SIZE = 10;
 
     public interface OnNewsClickListener {
         void onNewsClick(News news);
@@ -28,19 +35,39 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsVi
 
     private final Context context;
     private final OnNewsClickListener listener;
-    private final List<News> allNews;
-    private List<News> filteredNews;
-    private List<News> visibleNews;
+    private final NewsDatabaseHelper newsDatabaseHelper;
+    private final CategoryDatabaseHelper categoryDatabaseHelper;
+    private final ExecutorService queryExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final AtomicLong latestRequest = new AtomicLong();
+    private List<News> visibleNews = new ArrayList<>();
     private String selectedCategory = "";
     private String searchQuery = "";
+    private int currentPage = 1;
+    private int totalCount;
 
-    public NewsFeedAdapter(Context context, List<News> newsList, OnNewsClickListener listener) {
+    public NewsFeedAdapter(
+            Context context,
+            NewsDatabaseHelper newsDatabaseHelper,
+            CategoryDatabaseHelper categoryDatabaseHelper,
+            OnNewsClickListener listener) {
         this.context = context;
+        this.newsDatabaseHelper = newsDatabaseHelper;
+        this.categoryDatabaseHelper = categoryDatabaseHelper;
         this.listener = listener;
-        this.allNews = new ArrayList<>(newsList);
-        this.filteredNews = new ArrayList<>(newsList);
-        this.visibleNews = new ArrayList<>();
-        showFirstPage();
+        loadPage(1);
+    }
+
+    public NewsFeedAdapter(
+            Context context,
+            List<News> newsList,
+            OnNewsClickListener listener) {
+        this.context = context;
+        this.newsDatabaseHelper = null;
+        this.categoryDatabaseHelper = null;
+        this.listener = listener;
+        this.visibleNews = new ArrayList<>(newsList);
+        this.totalCount = visibleNews.size();
     }
 
     @NonNull
@@ -75,52 +102,73 @@ public class NewsFeedAdapter extends RecyclerView.Adapter<NewsFeedAdapter.NewsVi
     }
 
     public void filter(String query) {
-        searchQuery = query == null ? "" : query.toLowerCase(Locale.ROOT).trim();
-        applyFilters();
+        searchQuery = query == null ? "" : query.trim();
+        loadPage(1);
     }
 
     public void filterByCategory(String category) {
         selectedCategory = category == null || category.equalsIgnoreCase("Mới nhất")
-                ? "" : normalizeCategory(category);
-        applyFilters();
-    }
-
-    private String normalizeCategory(String category) {
-        return category;
-    }
-
-    private void applyFilters() {
-        filteredNews = new ArrayList<>();
-        for (News news : allNews) {
-            boolean matchesQuery = searchQuery.isEmpty()
-                    || news.getTitle().toLowerCase(Locale.ROOT).contains(searchQuery);
-            boolean matchesCategory = selectedCategory.isEmpty()
-                    || news.getCategoryName().equalsIgnoreCase(selectedCategory);
-            if (matchesQuery && matchesCategory) {
-                filteredNews.add(news);
-            }
-        }
-        showFirstPage();
-        notifyDataSetChanged();
+                ? "" : category.trim();
+        loadPage(1);
     }
 
     public boolean hasMoreItems() {
-        return visibleNews.size() < filteredNews.size();
+        return currentPage < getPageCount();
     }
 
     public void loadNextPage() {
-        if (!hasMoreItems()) {
-            return;
+        if (hasMoreItems()) {
+            loadPage(currentPage + 1);
         }
-        int oldSize = visibleNews.size();
-        int newSize = Math.min(oldSize + PAGE_SIZE, filteredNews.size());
-        visibleNews.addAll(filteredNews.subList(oldSize, newSize));
-        notifyItemRangeInserted(oldSize, newSize - oldSize);
     }
 
-    private void showFirstPage() {
-        int visibleItemCount = Math.min(PAGE_SIZE, filteredNews.size());
-        visibleNews = new ArrayList<>(filteredNews.subList(0, visibleItemCount));
+    public void refresh() {
+        loadPage(currentPage);
+    }
+
+    private int getPageCount() {
+        return (totalCount + PAGE_SIZE - 1) / PAGE_SIZE;
+    }
+
+    private void loadPage(int page) {
+        int requestedPage = Math.max(1, page);
+        long requestId = latestRequest.incrementAndGet();
+        queryExecutor.execute(() -> {
+            String categoryId = categoryDatabaseHelper.getCategoryIdByName(selectedCategory);
+            int count = newsDatabaseHelper.getNewsCount(
+                    searchQuery, categoryId, "", "");
+            List<News> pageData = newsDatabaseHelper.getNewsPage(
+                    searchQuery, categoryId, "", "", requestedPage, PAGE_SIZE);
+            mainHandler.post(() -> {
+                if (requestId != latestRequest.get()) {
+                    return;
+                }
+                int previousPage = currentPage;
+                totalCount = count;
+                currentPage = count == 0
+                        ? 1
+                        : Math.min(requestedPage, getPageCount());
+                if (currentPage != requestedPage) {
+                    loadPage(currentPage);
+                    return;
+                }
+                if (requestedPage > 1 && previousPage == requestedPage - 1) {
+                    int oldItemCount = visibleNews.size();
+                    visibleNews = new ArrayList<>(visibleNews);
+                    visibleNews.addAll(pageData);
+                    notifyItemRangeInserted(oldItemCount, pageData.size());
+                } else {
+                    visibleNews = pageData;
+                    notifyDataSetChanged();
+                }
+            });
+        });
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        queryExecutor.shutdownNow();
+        super.onDetachedFromRecyclerView(recyclerView);
     }
 
     static class NewsViewHolder extends RecyclerView.ViewHolder {
