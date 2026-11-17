@@ -208,6 +208,12 @@ public class CategoryManagementActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnConfirm.setOnClickListener(v -> {
+            if (newsDatabaseHelper.getArticleCountByCategoryId(category.getId()) > 0) {
+                Toast.makeText(this,
+                        "Không thể xóa thể loại đang có tin tức tham chiếu.",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (databaseHelper.deleteCategory(category) != 1) {
                 Toast.makeText(this, "Không thể xóa thể loại.", Toast.LENGTH_SHORT).show();
                 return;
