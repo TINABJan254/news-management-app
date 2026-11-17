@@ -3,6 +3,8 @@ package com.example.newsmanagement.view.activity;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -18,6 +20,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.bumptech.glide.Glide;
 import com.example.newsmanagement.data.CategoryDatabaseHelper;
 import com.example.newsmanagement.data.NewsDatabaseHelper;
 import com.example.newsmanagement.model.Category;
@@ -45,6 +48,7 @@ public class EditNewsActivity extends AppCompatActivity {
     private EditText etNewsTitle;
     private EditText etNewsAuthor;
     private EditText etNewsImageUrl;
+    private ImageView ivNewsPreview;
     private EditText etNewsDetail;
     private TextView btnCancel;
     private TextView btnUpdateNews;
@@ -92,6 +96,7 @@ public class EditNewsActivity extends AppCompatActivity {
         etNewsTitle = findViewById(R.id.etNewsTitle);
         etNewsAuthor = findViewById(R.id.etNewsAuthor);
         etNewsImageUrl = findViewById(R.id.etNewsImageUrl);
+        ivNewsPreview = findViewById(R.id.ivNewsPreview);
         etNewsDetail = findViewById(R.id.etNewsDetail);
         btnCancel = findViewById(R.id.btnCancel);
         btnUpdateNews = findViewById(R.id.btnUpdateNews);
@@ -180,6 +185,32 @@ public class EditNewsActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> finish());
         layoutSelectDate.setOnClickListener(v -> showDatePicker());
         btnUpdateNews.setOnClickListener(v -> handleUpdateNews());
+        etNewsImageUrl.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateImagePreview();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+        updateImagePreview();
+    }
+
+    private void updateImagePreview() {
+        String imageUrl = etNewsImageUrl.getText().toString().trim();
+        Glide.with(this)
+                .load(imageUrl.isEmpty() ? null : imageUrl)
+                .placeholder(R.drawable.ic_image_placeholder)
+                .fallback(R.drawable.ic_image_placeholder)
+                .error(R.drawable.ic_image_placeholder)
+                .fitCenter()
+                .into(ivNewsPreview);
     }
 
     private void showDatePicker() {
