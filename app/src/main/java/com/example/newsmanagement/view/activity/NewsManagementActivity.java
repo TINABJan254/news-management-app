@@ -23,7 +23,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.IntentCompat;
-import androidx.core.os.BundleCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -37,13 +36,11 @@ import com.example.newsmanagement.view.adapter.NewsAdapter;
 import com.example.newsmanagement.model.Category;
 import com.example.newsmanagement.model.News;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 public class NewsManagementActivity extends AppCompatActivity {
 
-    private static final String STATE_NEWS_LIST = "news_list";
     private static final String STATE_CATEGORY_CHIP = "category_chip";
 
     private ImageView btnBack;
@@ -51,7 +48,6 @@ public class NewsManagementActivity extends AppCompatActivity {
     private EditText etSearchNews;
     private RecyclerView rvNews;
     private NewsAdapter newsAdapter;
-    private List<News> newsList;
     private NewsDatabaseHelper newsDatabaseHelper;
 
     // Filter Chips
@@ -81,14 +77,7 @@ public class NewsManagementActivity extends AppCompatActivity {
                 if (updatedNews == null) {
                     return;
                 }
-                for (int i = 0; i < newsList.size(); i++) {
-                    if (newsList.get(i).getId().equals(updatedNews.getId())) {
-                        newsList.set(i, updatedNews);
-                        newsAdapter.updateData(newsList);
-                        updatePagination();
-                        break;
-                    }
-                }
+                newsAdapter.refresh();
             });
 
     private final ActivityResultLauncher<Intent> addNewsLauncher = registerForActivityResult(
@@ -101,9 +90,7 @@ public class NewsManagementActivity extends AppCompatActivity {
                 if (addedNews == null) {
                     return;
                 }
-                newsList.add(0, addedNews);
-                newsAdapter.updateData(newsList);
-                updatePagination();
+                newsAdapter.refresh();
             });
 
     @Override
@@ -153,28 +140,19 @@ public class NewsManagementActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putSerializable(STATE_NEWS_LIST, new ArrayList<>(newsList));
         outState.putString(STATE_CATEGORY_CHIP, currentSelectedChip.getText().toString());
     }
 
-    @SuppressWarnings("unchecked")
     private void setupData(Bundle savedInstanceState) {
         newsDatabaseHelper = new NewsDatabaseHelper(this);
         categoryDatabaseHelper = new CategoryDatabaseHelper(this);
-        newsList = new ArrayList<>();
         setupCategoryChips();
 
-        if (savedInstanceState != null) {
-            ArrayList<News> savedNews = BundleCompat.getSerializable(
-                    savedInstanceState, STATE_NEWS_LIST, ArrayList.class);
-            if (savedNews != null) {
-                newsList = savedNews;
-            }
-        } else {
-            newsList = newsDatabaseHelper.getAllNews();
-        }
-
-        newsAdapter = new NewsAdapter(this, newsList, new NewsAdapter.OnNewsActionListener() {
+        newsAdapter = new NewsAdapter(
+                this,
+                newsDatabaseHelper,
+                categoryDatabaseHelper,
+                new NewsAdapter.OnNewsActionListener() {
             @Override
             public void onEdit(News news) {
                 Intent intent = new Intent(NewsManagementActivity.this, EditNewsActivity.class);
@@ -193,9 +171,9 @@ public class NewsManagementActivity extends AppCompatActivity {
                 intent.putExtra(NewsDetailActivity.EXTRA_NEWS, news);
                 startActivity(intent);
             }
-        });
+                });
+        newsAdapter.setOnDataLoadedListener(this::updatePagination);
         rvNews.setAdapter(newsAdapter);
-        updatePagination();
     }
 
     private void setupEvents() {
@@ -405,9 +383,7 @@ public class NewsManagementActivity extends AppCompatActivity {
                 Toast.makeText(this, "Không thể xóa bài viết.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            newsList.remove(news);
-            newsAdapter.updateData(newsList);
-            updatePagination();
+            newsAdapter.refresh();
             Toast.makeText(this, "Đã xóa bài viết: " + news.getId(), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });

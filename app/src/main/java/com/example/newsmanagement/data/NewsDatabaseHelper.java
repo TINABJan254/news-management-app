@@ -90,6 +90,59 @@ public class NewsDatabaseHelper extends SQLiteOpenHelper {
         return newsList;
     }
 
+    public List<News> getNewsPage(
+            String searchQuery,
+            String categoryId,
+            String startDate,
+            String endDate,
+            int page,
+            int pageSize) {
+        List<News> newsList = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        String selection = buildNewsSelection(searchQuery, categoryId, startDate, endDate);
+        String[] selectionArgs = buildNewsSelectionArgs(
+                searchQuery, categoryId, startDate, endDate);
+        int offset = Math.max(0, page - 1) * pageSize;
+
+        try (Cursor cursor = db.query(
+                TABLE_NEWS,
+                null,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                "rowid DESC",
+                String.valueOf(pageSize) + " OFFSET " + offset)) {
+            while (cursor.moveToNext()) {
+                newsList.add(fromCursor(cursor));
+            }
+        }
+
+        return newsList;
+    }
+
+    public int getNewsCount(
+            String searchQuery,
+            String categoryId,
+            String startDate,
+            String endDate) {
+        SQLiteDatabase db = getReadableDatabase();
+        String selection = buildNewsSelection(searchQuery, categoryId, startDate, endDate);
+        String[] selectionArgs = buildNewsSelectionArgs(
+                searchQuery, categoryId, startDate, endDate);
+
+        try (Cursor cursor = db.query(
+                TABLE_NEWS,
+                new String[]{"COUNT(*)"},
+                selection,
+                selectionArgs,
+                null,
+                null,
+                null)) {
+            return cursor.moveToFirst() ? cursor.getInt(0) : 0;
+        }
+    }
+
     public long getNewsCount() {
         return DatabaseUtils.queryNumEntries(getReadableDatabase(), TABLE_NEWS);
     }
@@ -155,6 +208,65 @@ public class NewsDatabaseHelper extends SQLiteOpenHelper {
                 new String[]{categoryId})) {
             return cursor.moveToFirst() ? cursor.getInt(0) : 0;
         }
+    }
+
+    private static String buildNewsSelection(
+            String searchQuery,
+            String categoryId,
+            String startDate,
+            String endDate) {
+        List<String> conditions = new ArrayList<>();
+        if (searchQuery != null && !searchQuery.isEmpty()) {
+            conditions.add("(" + COLUMN_TITLE + " LIKE ? OR " + COLUMN_ID + " LIKE ?)");
+        }
+        if (categoryId != null && !categoryId.isEmpty()) {
+            conditions.add(COLUMN_CATEGORY_ID + " = ?");
+        }
+        if (startDate != null && !startDate.isEmpty()) {
+            conditions.add(dateExpression() + " >= date(?)");
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            conditions.add(dateExpression() + " <= date(?)");
+        }
+        return conditions.isEmpty() ? null : String.join(" AND ", conditions);
+    }
+
+    private static String[] buildNewsSelectionArgs(
+            String searchQuery,
+            String categoryId,
+            String startDate,
+            String endDate) {
+        List<String> args = new ArrayList<>();
+        if (searchQuery != null && !searchQuery.isEmpty()) {
+            String pattern = "%" + searchQuery + "%";
+            args.add(pattern);
+            args.add(pattern);
+        }
+        if (categoryId != null && !categoryId.isEmpty()) {
+            args.add(categoryId);
+        }
+        if (startDate != null && !startDate.isEmpty()) {
+            args.add(toSqlDate(startDate));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            args.add(toSqlDate(endDate));
+        }
+        return args.toArray(new String[0]);
+    }
+
+    private static String dateExpression() {
+        return "date(substr(" + COLUMN_PUBLISH_DATE + ", 7, 4) || '-' || "
+                + "substr(" + COLUMN_PUBLISH_DATE + ", 4, 2) || '-' || "
+                + "substr(" + COLUMN_PUBLISH_DATE + ", 1, 2))";
+    }
+
+    private static String toSqlDate(String date) {
+        if (date == null || date.length() != 10) {
+            return date;
+        }
+        return date.substring(6, 10) + "-"
+                + date.substring(3, 5) + "-"
+                + date.substring(0, 2);
     }
 
     private static ContentValues toContentValues(News news) {

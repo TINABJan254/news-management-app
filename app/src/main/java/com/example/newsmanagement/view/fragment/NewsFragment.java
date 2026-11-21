@@ -57,6 +57,9 @@ public class NewsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (newsAdapter != null) {
+            newsAdapter.refresh();
+        }
         if (categoryDatabaseHelper != null) {
             List<Category> categories = categoryDatabaseHelper.getAllCategories();
             List<String> categoryNames = new ArrayList<>();
@@ -81,9 +84,12 @@ public class NewsFragment extends Fragment {
         categoryDatabaseHelper = new CategoryDatabaseHelper(getActivity());
         newsDatabaseHelper = new NewsDatabaseHelper(getActivity());
         setupCategoryChips(categoryDatabaseHelper.getAllCategories());
-        List<News> newsList = newsDatabaseHelper.getAllNews();
 
-        newsAdapter = new NewsFeedAdapter(getActivity(), newsList, this::openNews);
+        newsAdapter = new NewsFeedAdapter(
+                getActivity(),
+                newsDatabaseHelper,
+                categoryDatabaseHelper,
+                this::openNews);
         newsRecyclerView.setAdapter(newsAdapter);
         newsRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
